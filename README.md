@@ -1,8 +1,27 @@
-# MGP-101 — Área Restrita
+<div align="center">
 
-Jogo em primeira pessoa de exploração e detecção de radiação, desenvolvido em JavaScript e [Three.js](https://threejs.org/). O jogador investiga um laboratório, interpreta o monitor MGP-101, usa distância e blindagem para reduzir a exposição e localiza fontes radioativas procedurais.
+# ☢ MGP-101 — ÁREA RESTRITA
 
-Produção: [radinstruments.com.br/game/](https://radinstruments.com.br/game/)
+**Jogo em primeira pessoa de exploração e detecção de radiação, desenvolvido em JavaScript e Three.js.**
+
+[![JavaScript](https://img.shields.io/badge/JavaScript-ES_Modules-F7DF1E?style=for-the-badge&logo=javascript&logoColor=111111)](https://developer.mozilla.org/docs/Web/JavaScript)
+[![Three.js](https://img.shields.io/badge/Three.js-0.160.0-000000?style=for-the-badge&logo=threedotjs&logoColor=white)](https://threejs.org/)
+[![Vite](https://img.shields.io/badge/Vite-8-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
+[![Checks](https://img.shields.io/github/actions/workflow/status/luancesarcode/mgp101-area-restrita/checks.yml?style=for-the-badge&label=checks)](https://github.com/luancesarcode/mgp101-area-restrita/actions/workflows/checks.yml)
+
+### [▶ JOGAR AGORA](https://radinstruments.com.br/game/)
+
+[Sobre](#sobre-o-jogo) · [Demonstração](#demonstração) · [Instalação](#instalação-e-execução-local) · [Controles](#controles) · [Arquitetura](#arquitetura)
+
+</div>
+
+---
+
+## Sobre o jogo
+
+O jogador investiga um laboratório, interpreta o monitor MGP-101, usa distância e blindagem para reduzir a exposição e localiza fontes radioativas procedurais antes de ultrapassar os limites da missão.
+
+O jogo pode ser acessado diretamente em **[https://radinstruments.com.br/game/](https://radinstruments.com.br/game/)**.
 
 > O repositório modulariza o jogo original sem alterar regras, visual, física, áudio, controles, progressão ou persistência. O monólito intacto permanece em `jogo-geiger.html` e na tag Git `v1.0-monolith`.
 
@@ -17,6 +36,41 @@ Produção: [radinstruments.com.br/game/](https://radinstruments.com.br/game/)
 - Três slots de campanha, configurações e recordes locais.
 - Qualidade gráfica adaptativa e pós-processamento com bloom.
 
+## Demonstração
+
+### Capturas de tela
+
+> 📷 Espaço reservado para as imagens oficiais do jogo.
+
+<!--
+Quando as imagens estiverem prontas, coloque-as em docs/media/screenshots/ e substitua este comentário por algo como:
+
+<p align="center">
+  <img src="docs/media/screenshots/menu-principal.png" width="48%" alt="Menu principal do MGP-101">
+  <img src="docs/media/screenshots/gameplay-laboratorio.png" width="48%" alt="Gameplay no laboratório">
+</p>
+-->
+
+### Vídeo de gameplay
+
+> 🎥 Espaço reservado para o trailer ou vídeo de gameplay.
+
+<!--
+Recomendação: publique o vídeo no YouTube e use uma imagem clicável para evitar armazenar vídeos grandes no GitHub:
+
+[![Assistir ao gameplay](docs/media/screenshots/video-cover.png)](https://www.youtube.com/watch?v=SEU_VIDEO)
+-->
+
+## Estado do projeto
+
+| Item | Situação |
+|---|---|
+| Versão jogável no navegador | Disponível |
+| Campanha com 13 fases | Implementada |
+| Teclado, mouse e controle Xbox | Implementados |
+| Refatoração modular | Concluída |
+| Screenshots e trailer | Em preparação |
+
 ## Tecnologias
 
 - JavaScript com ES Modules
@@ -30,16 +84,36 @@ O Three.js está fixado na mesma versão do jogo original para evitar mudanças 
 
 Ao selecionar **CONTINUAR** na tela de boot, o jogo solicita o modo de tela cheia. Se o navegador ou o host bloquear essa permissão, o menu abre normalmente em modo janela.
 
-## Executar localmente
+## Instalação e execução local
 
-Requisitos: Node.js 24 ou uma versão compatível com o Vite 8.
+### Pré-requisitos
+
+- [Git](https://git-scm.com/)
+- Node.js 24 ou uma versão compatível com o Vite 8
+- Navegador com suporte a WebGL e ES Modules
+
+### Instalação
 
 ```bash
+git clone https://github.com/luancesarcode/mgp101-area-restrita.git
+cd mgp101-area-restrita
 npm install
+```
+
+### Iniciar o jogo
+
+```bash
 npm run dev
 ```
 
-O endereço mostrado pelo Vite deve ser aberto por HTTP. A aplicação modular não deve ser iniciada por duplo clique em `index.html`, pois navegadores restringem módulos carregados por `file://`.
+Abra o endereço exibido pelo Vite no terminal. O projeto deve ser executado por HTTP; não abra `index.html` por duplo clique, pois navegadores restringem módulos carregados por `file://`.
+
+### Visualizar o build de produção
+
+```bash
+npm run build
+npm run preview
+```
 
 ## Comandos
 
@@ -128,3 +202,13 @@ Os hashes e as verificações da migração estão em [docs/BASELINE.md](docs/BA
 ## Licenciamento
 
 Nenhuma licença pública foi definida. Antes de tornar o repositório público, confirme os direitos de redistribuição das músicas, efeitos sonoros, logotipos e demais elementos da marca RAD Instruments.
+
+---
+
+<div align="center">
+
+Desenvolvido com JavaScript e Three.js para a **RAD Instruments**.
+
+[Jogar online](https://radinstruments.com.br/game/) · [Reportar problema](https://github.com/luancesarcode/mgp101-area-restrita/issues)
+
+</div>
