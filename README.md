@@ -27,7 +27,6 @@ O jogo pode ser acessado diretamente em **[https://radinstruments.com.br/game/](
 - Campanha com 13 fases, incluindo evacuação final.
 - Quatro isótopos com respostas diferentes à blindagem.
 - Campo de radiação e dose baseados em distância, intensidade e transmissão.
-- Objetos interativos e física em passo fixo de 1/120 s.
 - Monitor MGP-101 em primeira pessoa com LCD emulado.
 - Teclado, mouse e controles Xbox pela Gamepad API.
 - Três slots de campanha, configurações e recordes locais.
