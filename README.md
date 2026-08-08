@@ -43,14 +43,34 @@ O jogo pode ser acessado diretamente em **[https://radinstruments.com.br/game/](
 
 > 🎥 Espaço reservado para o trailer ou vídeo de gameplay.
 
-## Estado do projeto
+<h2 align="center">Estado do projeto</h2>
 
-| Item | Situação |
-|---|---|
-| Versão jogável no navegador | Disponível |
-| Campanha com 13 fases | Implementada |
-| Teclado, mouse e controle Xbox | Implementados |
-| Screenshots e trailer | Em preparação |
+<table align="center">
+  <thead>
+    <tr>
+      <th align="center">Item</th>
+      <th align="center">Situação</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">Versão jogável no navegador</td>
+      <td align="center">Disponível</td>
+    </tr>
+    <tr>
+      <td align="center">Campanha com 13 fases</td>
+      <td align="center">Implementada</td>
+    </tr>
+    <tr>
+      <td align="center">Teclado, mouse e controle Xbox</td>
+      <td align="center">Implementados</td>
+    </tr>
+    <tr>
+      <td align="center">Screenshots e trailer</td>
+      <td align="center">Em preparação</td>
+    </tr>
+  </tbody>
+</table>
 
 ## Tecnologias
 
