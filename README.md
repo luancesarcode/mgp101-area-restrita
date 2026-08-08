@@ -37,7 +37,13 @@ O jogo pode ser acessado diretamente em **[https://radinstruments.com.br/game/](
 
 ### Capturas de tela
 
-> 📷 Espaço reservado para as imagens oficiais do jogo.
+<p align="center">
+  <a href="docs/media/screenshots/menu-principal.png">
+    <img src="docs/media/screenshots/menu-principal.png" width="100%" alt="Menu principal do MGP-101 Área Restrita dentro do laboratório">
+  </a>
+</p>
+
+<p align="center"><em>Menu principal do MGP-101: Área Restrita</em></p>
 
 ### Vídeo de gameplay
 
