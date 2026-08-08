@@ -100,6 +100,15 @@ Abra o endereço exibido pelo Vite no terminal. O projeto deve ser executado por
 
 Os controles completos de manipulação de objetos continuam disponíveis dentro do próprio jogo.
 
+## Licença
+
+O código-fonte está disponível sob a [Licença MIT](LICENSE), com direitos
+autorais atribuídos a Luan César.
+
+As músicas, efeitos sonoros, imagens, vídeos, logotipos e demais recursos de
+mídia não fazem parte da licença MIT. Esses materiais permanecem com
+[Todos os Direitos Reservados](ASSETS-LICENSE.md).
+
 ---
 
 <div align="center">
