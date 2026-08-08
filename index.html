@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MGP-101 Área Restrita</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=VT323&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/src/styles/main.css" />
+
+</head>
+<body>
+
+<div id="vignette"></div>
+<div id="vignette-dmg"></div>
+<div id="evac-whiteout" aria-hidden="true"></div>
+<div id="hud">
+  <section class="hud-panel" id="objective-panel">
+    <div class="panel-title">OBJETIVO</div>
+    <div class="mission" id="hud-mission"></div>
+    <div class="info-row">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.2v4.8l3.1 1.9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <span>Tempo</span><b id="hud-time">00:00</b>
+    </div>
+    <div class="info-row">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g fill="currentColor"><circle cx="12" cy="12" r="2.2"/><path d="M12 3.6 A8.4 8.4 0 0 1 19.3 7.8 L15.1 10.2 A3.6 3.6 0 0 0 12 8.4 Z"/><path d="M12 3.6 A8.4 8.4 0 0 1 19.3 7.8 L15.1 10.2 A3.6 3.6 0 0 0 12 8.4 Z" transform="rotate(120 12 12)"/><path d="M12 3.6 A8.4 8.4 0 0 1 19.3 7.8 L15.1 10.2 A3.6 3.6 0 0 0 12 8.4 Z" transform="rotate(240 12 12)"/></g></svg>
+      <span>Dose</span><b id="hud-dose">0.000 / 40 µSv</b>
+    </div>
+    <div class="budget"><div id="hud-budget"></div></div>
+  </section>
+
+</div>
+
+<div class="hud-panel" id="health-panel">
+  <svg viewBox="0 0 32 32" aria-hidden="true">
+    <path d="M16 27 C8.2 21.2 3.8 16.6 3.8 11.4 C3.8 7.6 6.6 5 10 5 C12.4 5 14.6 6.4 16 8.8 C17.4 6.4 19.6 5 22 5 C25.4 5 28.2 7.6 28.2 11.4 C28.2 16.6 23.8 21.2 16 27 Z" fill="none" stroke="#41d3ff" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M7.5 15 h4.4 l1.8-3.4 2.8 7 2.2-4.4 1.2 0.8 h4.6" fill="none" stroke="#41d3ff" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+  </svg>
+  <div>
+    <div class="panel-title sub">SAÚDE</div>
+    <div class="health-bar"><div id="hud-health"></div></div>
+  </div>
+  <b id="hud-health-val">100%</b>
+</div>
+
+<div id="hint">
+  <kbd id="hint-key"><span class="gp-glyph" id="hint-key-label">F</span></kbd>
+  <span class="hint-copy"><span id="hint-text"></span></span>
+</div>
+<div id="manipulation-help" aria-hidden="true">
+  <div class="manipulation-title">MANIPULAÇÃO DO OBJETO</div>
+  <div class="manipulation-mode manipulation-gamepad">
+    <div class="manipulation-row">
+      <span class="gp-btn dark"><span class="gp-glyph">LB</span></span> +
+      <span class="gp-btn dark"><span class="gp-glyph">RS</span></span>
+      <span>girar nos eixos X/Y</span>
+    </div>
+    <div class="manipulation-row">
+      <span class="gp-btn dark"><span class="gp-glyph">LB</span></span> +
+      <span class="gp-btn dark"><span class="gp-glyph">LT</span></span> /
+      <span class="gp-btn dark"><span class="gp-glyph">RT</span></span>
+      <span>girar no eixo Z</span>
+    </div>
+    <div class="manipulation-row">
+      <span class="gp-btn dark"><span class="gp-glyph">LB</span></span> +
+      <span class="gp-btn dark"><span class="gp-glyph">LS</span></span>
+      <span>↑ afastar · ↓ aproximar</span>
+    </div>
+  </div>
+  <div class="manipulation-mode manipulation-keyboard">
+    <div class="manipulation-row"><span class="key-btn">Scroll ↑↓</span><span>inclinar como LB + RS</span></div>
+    <div class="manipulation-row"><span class="key-btn">M1</span><span>girar continuamente para a esquerda</span></div>
+    <div class="manipulation-row"><span class="key-btn">M2</span><span>girar continuamente para a direita</span></div>
+    <div class="manipulation-row"><span class="key-btn">Shift + Scroll</span><span>ajustar distância</span></div>
+  </div>
+</div>
+<div id="gamepad-status" role="status" aria-live="polite"><span class="gp-icon">🎮</span><span id="gamepad-name">CONTROLE XBOX CONECTADO</span></div>
+<div id="toast">
+  <span id="toast-text"></span>
+  <svg class="toast-pulse" viewBox="0 0 240 14" aria-hidden="true">
+    <path d="M2 7 H88" stroke="rgba(110,210,255,0.45)" stroke-width="1.5" stroke-dasharray="5 5" fill="none"/>
+    <path d="M88 7 h10 l4-5 6 10 4-5 h10" stroke="#57d7ff" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+    <path d="M122 7 H238" stroke="rgba(110,210,255,0.45)" stroke-width="1.5" stroke-dasharray="5 5" fill="none"/>
+  </svg>
+</div>
+<div id="crosshair"></div>
+<div id="debug"></div>
+
+<div id="boot-screen" class="screen" role="dialog" aria-labelledby="boot-title">
+  <div class="menu-panel boot-panel">
+    <div class="hazard-strip"></div>
+    <div class="brand">
+      <svg class="boot-trefoil" viewBox="0 0 100 100" width="62" height="62" aria-hidden="true">
+        <g fill="#7dff5e" transform="rotate(90 50 50)">
+          <circle cx="50" cy="50" r="9" />
+          <path d="M62.1 43 A14 14 0 0 1 62.1 57 L86.4 71 A42 42 0 0 0 86.4 29 Z" />
+          <path d="M62.1 43 A14 14 0 0 1 62.1 57 L86.4 71 A42 42 0 0 0 86.4 29 Z" transform="rotate(120 50 50)" />
+          <path d="M62.1 43 A14 14 0 0 1 62.1 57 L86.4 71 A42 42 0 0 0 86.4 29 Z" transform="rotate(240 50 50)" />
+        </g>
+      </svg>
+      <div>
+        <div class="game-title" id="boot-title">MGP-101</div>
+        <div class="game-sub">ÁREA RESTRITA</div>
+      </div>
+    </div>
+    <div class="menu-lcd"><span class="lcd-label">H*(10)</span><span>0.13 µSv/h</span></div>
+    <p class="boot-copy">MGP-101 é um jogo de exploração e detecção de radiação. Investigue o laboratório, use o monitor Geiger e encontre a fonte radioativa antes que a exposição aumente.</p>
+    <button class="cta" id="boot-continue" type="button">CONTINUAR</button>
+    <div class="menu-foot" id="boot-foot" style="text-align:center">RAD instruments · MGP-101</div>
+  </div>
+</div>
+
+<div id="start-screen" class="screen">
+  <div id="start-particles"></div>
+  <div class="menu-panel">
+    <div class="hazard-strip"></div>
+    <div class="brand">
+      <svg id="trefoil" viewBox="0 0 100 100" width="62" height="62" aria-hidden="true">
+        <g fill="#7dff5e" transform="rotate(90 50 50)">
+          <circle cx="50" cy="50" r="9" />
+          <path d="M62.1 43 A14 14 0 0 1 62.1 57 L86.4 71 A42 42 0 0 0 86.4 29 Z" />
+          <path d="M62.1 43 A14 14 0 0 1 62.1 57 L86.4 71 A42 42 0 0 0 86.4 29 Z" transform="rotate(120 50 50)" />
+          <path d="M62.1 43 A14 14 0 0 1 62.1 57 L86.4 71 A42 42 0 0 0 86.4 29 Z" transform="rotate(240 50 50)" />
+        </g>
+      </svg>
+      <div>
+        <div class="game-title">MGP-101</div>
+        <div class="game-sub">ÁREA RESTRITA</div>
+      </div>
+    </div>
+    <div class="menu-lcd"><span class="lcd-label">H*(10)</span><span id="start-lcd">0.12 µSv/h</span></div>
+    <ul id="menu-list"></ul>
+    <div id="menu-info" style="display:none"></div>
+    <div id="menu-page" style="display:none">
+      <div id="menu-page-title"></div>
+      <div id="menu-page-body"></div>
+      <div id="menu-back">VOLTAR</div>
+    </div>
+    <div class="menu-foot" id="start-foot" style="text-align:center">▲▼ navegar · Enter selecionar</div>
+  </div>
+</div>
+
+<div id="pause-screen" class="screen">
+  <div id="pause-particles"></div>
+  <div class="menu-panel">
+    <div class="hazard-strip"></div>
+    <div class="pause-title">PAUSADO</div>
+    <div id="pause-stats"></div>
+    <ul id="pause-list"></ul>
+    <div id="pause-page" style="display:none">
+      <div id="pause-page-title"></div>
+      <div id="pause-page-body"></div>
+      <div id="pause-back">VOLTAR</div>
+    </div>
+    <div id="pause-foot" class="menu-foot" style="text-align:center">▲▼ navegar · Enter selecionar</div>
+  </div>
+</div>
+
+<div id="end-screen" class="screen">
+  <h1 id="end-title"></h1>
+  <p id="end-sub"></p>
+  <div class="result" id="end-stats"></div>
+  <canvas id="end-map" width="560" height="420"></canvas>
+  <div class="legend">dose baixa <div class="bar"></div> dose alta · <span style="color:#ff5252">☢ fonte</span> · <span>○ início</span></div>
+  <div class="campaign-actions">
+    <button class="cta" id="btn-next-phase" type="button">Próxima fase</button>
+    <button class="cta secondary" id="btn-end-menu" type="button">MENU PRINCIPAL</button>
+  </div>
+</div>
+
+<div id="campaign-screen" class="screen" role="dialog" aria-labelledby="campaign-title">
+  <div id="campaign-particles"></div>
+  <div class="menu-panel">
+    <div class="hazard-strip"></div>
+    <h1 id="campaign-title">MISSÃO CONCLUÍDA</h1>
+    <p>O laboratório foi descontaminado: todas as fontes radioativas foram localizadas, blindadas e removidas com segurança.</p>
+    <p>Obrigado por jogar MGP-101.</p>
+    <div class="campaign-actions">
+      <button class="cta" id="btn-play-again" type="button">JOGAR NOVAMENTE</button>
+      <button class="cta secondary" id="btn-campaign-menu" type="button">MENU PRINCIPAL</button>
+    </div>
+    <div class="menu-foot">RAD instruments · MGP-101</div>
+  </div>
+</div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
