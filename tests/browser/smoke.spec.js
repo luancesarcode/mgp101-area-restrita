@@ -20,6 +20,7 @@ test('inicializa o jogo modular em /game/ sem erros', async ({ page }) => {
   await page.getByRole('button', { name: 'CONTINUAR' }).click();
   await expect(page.locator('#boot-screen')).toBeHidden();
   await expect(page.locator('#start-screen')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.fullscreenElement === document.documentElement)).toBe(true);
   await expect(page.locator('#start-screen li')).toHaveText([
     'NOVO JOGO',
     'CONFIGURAÇÕES',

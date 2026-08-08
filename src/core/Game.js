@@ -268,6 +268,19 @@ export class Game {
   _continueBoot() {
     const boot = document.getElementById('boot-screen');
     if (getComputedStyle(boot).display === 'none') return;
+    // O clique em CONTINUAR possui a ativação de usuário exigida pela
+    // Fullscreen API. Se o host bloquear a solicitação, o menu continua
+    // normalmente e o jogador ainda pode usar o navegador em modo janela.
+    const fullscreenTarget = document.documentElement;
+    const requestFullscreen = fullscreenTarget.requestFullscreen || fullscreenTarget.webkitRequestFullscreen;
+    if (!document.fullscreenElement && !document.webkitFullscreenElement && requestFullscreen) {
+      try {
+        const request = requestFullscreen.call(fullscreenTarget, { navigationUI: 'hide' });
+        if (request?.catch) request.catch(() => {});
+      } catch (_) {
+        // Fullscreen é um aprimoramento: nunca deve bloquear o início do jogo.
+      }
+    }
     // Clique, tecla ou botão A libera o fluxo. O navegador ainda pode exigir
     // uma interação de teclado/mouse para áudio, mas nunca bloqueia o gamepad.
     this.audio.playMenuMusic();

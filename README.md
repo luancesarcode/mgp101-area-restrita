@@ -28,6 +28,8 @@ Produção: [radinstruments.com.br/game/](https://radinstruments.com.br/game/)
 
 O Three.js está fixado na mesma versão do jogo original para evitar mudanças de renderização ou comportamento.
 
+Ao selecionar **CONTINUAR** na tela de boot, o jogo solicita o modo de tela cheia. Se o navegador ou o host bloquear essa permissão, o menu abre normalmente em modo janela.
+
 ## Executar localmente
 
 Requisitos: Node.js 24 ou uma versão compatível com o Vite 8.

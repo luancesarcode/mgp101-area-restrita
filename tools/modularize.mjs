@@ -143,6 +143,26 @@ files.set('src/ui/Menus.js', compose(
   exported(take(4541, 5433), ['StartMenu', 'PauseMenu', 'XboxGamepadController']),
 ));
 
+const gameModule = exported(take(5434, 6066), ['Game']).replace(
+  "    if (getComputedStyle(boot).display === 'none') return;\n",
+  [
+    "    if (getComputedStyle(boot).display === 'none') return;",
+    "    // O clique em CONTINUAR possui a ativação de usuário exigida pela",
+    "    // Fullscreen API. Se o host bloquear a solicitação, o menu continua",
+    "    // normalmente e o jogador ainda pode usar o navegador em modo janela.",
+    "    const fullscreenTarget = document.documentElement;",
+    "    const requestFullscreen = fullscreenTarget.requestFullscreen || fullscreenTarget.webkitRequestFullscreen;",
+    "    if (!document.fullscreenElement && !document.webkitFullscreenElement && requestFullscreen) {",
+    "      try {",
+    "        const request = requestFullscreen.call(fullscreenTarget, { navigationUI: 'hide' });",
+    "        if (request?.catch) request.catch(() => {});",
+    "      } catch (_) {",
+    "        // Fullscreen é um aprimoramento: nunca deve bloquear o início do jogo.",
+    "      }",
+    "    }",
+  ].join('\n') + '\n',
+);
+
 files.set('src/core/Game.js', compose(
   [
     "import * as THREE from 'three';",
@@ -168,7 +188,7 @@ files.set('src/core/Game.js', compose(
     "import { PauseMenu, StartMenu, XboxGamepadController } from '../ui/Menus.js';",
     '',
   ].join('\n'),
-  exported(take(5434, 6066), ['Game']),
+  gameModule,
 ));
 
 files.set('src/main.js', [
