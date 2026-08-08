@@ -47,7 +47,13 @@ O jogo pode ser acessado diretamente em **[https://radinstruments.com.br/game/](
 
 ### Vídeo de gameplay
 
-> 🎥 Espaço reservado para o trailer ou vídeo de gameplay.
+<p align="center">
+  <a href="docs/media/gameplay.gif">
+    <img src="docs/media/gameplay.gif" width="100%" alt="Demonstração do gameplay do MGP-101 Área Restrita">
+  </a>
+</p>
+
+<p align="center"><em>Exploração e detecção de radiação durante uma missão</em></p>
 
 ## Tecnologias
 
