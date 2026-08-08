@@ -17,6 +17,10 @@ test('inicializa o jogo modular em /game/ sem erros', async ({ page }) => {
   await expect(page.locator('#end-map')).toHaveAttribute('height', '420');
   await expect.poll(() => page.evaluate(() => Boolean(window.__game))).toBe(true);
 
+  // O runner do GitHub não possui GPU. A interface e o estado do jogo são
+  // síncronos, então o smoke test não precisa manter o loop 3D renderizando.
+  await page.evaluate(() => window.__game.sceneManager.renderer.setAnimationLoop(null));
+
   await page.getByRole('button', { name: 'CONTINUAR' }).click();
   await expect(page.locator('#boot-screen')).toBeHidden();
   await expect(page.locator('#start-screen')).toBeVisible();
