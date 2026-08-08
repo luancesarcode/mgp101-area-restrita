@@ -43,35 +43,6 @@ O jogo pode ser acessado diretamente em **[https://radinstruments.com.br/game/](
 
 > 🎥 Espaço reservado para o trailer ou vídeo de gameplay.
 
-<h2 align="center">Estado do projeto</h2>
-
-<table align="center">
-  <tbody>
-    <tr>
-      <td align="center" width="280">
-        <h3>🌐 Versão web</h3>
-        <a href="https://radinstruments.com.br/game/">
-          <img src="https://img.shields.io/badge/JOGAR-DISPON%C3%8DVEL-2ea043?style=for-the-badge" alt="Versão web disponível">
-        </a>
-      </td>
-      <td align="center" width="280">
-        <h3>☢ Campanha</h3>
-        <img src="https://img.shields.io/badge/13_FASES-IMPLEMENTADAS-7c3aed?style=for-the-badge" alt="Campanha com 13 fases implementadas">
-      </td>
-    </tr>
-    <tr>
-      <td align="center" width="280">
-        <h3>🎮 Controles</h3>
-        <img src="https://img.shields.io/badge/TECLADO_%2B_MOUSE-XBOX-0969da?style=for-the-badge" alt="Suporte a teclado, mouse e controle Xbox">
-      </td>
-      <td align="center" width="280">
-        <h3>🎬 Fotos e vídeo</h3>
-        <img src="https://img.shields.io/badge/STATUS-EM_PREPARA%C3%87%C3%83O-f59e0b?style=for-the-badge" alt="Fotos e vídeo em preparação">
-      </td>
-    </tr>
-  </tbody>
-</table>
-
 ## Tecnologias
 
 - JavaScript com ES Modules
