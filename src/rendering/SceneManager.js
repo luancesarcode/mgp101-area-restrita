@@ -72,10 +72,12 @@ export class SceneManager {
     sun.shadow.normalBias = 0.025; // remove o serrilhado (acne) em arestas finas
     this.scene.add(sun);
 
-    this.vmScene.add(new THREE.HemisphereLight(0xffffff, 0x556070, 1.5));
+    this.vmHemi = new THREE.HemisphereLight(0xffffff, 0x556070, 1.5);
+    this.vmScene.add(this.vmHemi);
     const vmKey = new THREE.DirectionalLight(0xffffff, 1.6);
     vmKey.position.set(-0.5, 1, 0.6);
     this.vmScene.add(vmKey);
+    this.vmKey = vmKey;
   }
 
   _onResize() {

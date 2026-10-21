@@ -47,7 +47,7 @@ export class Game {
     this.viewmodel = new DetectorViewmodel(this.sceneManager.vmScene, this.sceneManager.vmCamera, this.detector, this.audio);
     this.field = new RadiationField(this.sceneManager.scene, this.source);
     this.atmosphere = new EpicAtmosphere(this.sceneManager.scene, lab.mats.ceiling);
-    this.blackout = new Blackout(this.sceneManager, lab.mats);
+    this.blackout = new Blackout(this.sceneManager, lab.mats, this.viewmodel);
     this.hud = new HUD();
     this.interact = new InteractionSystem(lab.containers, lab.colliders, this.source, this.sceneManager.camera, this.hud, this.audio);
     // objetos soltos do cenário (caixas das estantes, teclados, mouses):

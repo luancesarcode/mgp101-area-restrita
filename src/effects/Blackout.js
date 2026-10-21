@@ -4,14 +4,22 @@ import * as THREE from 'three';
 // Dificuldade Blackout: a energia do laboratório caiu. Luminárias, forro e a
 // luz ambiente se apagam; só sobram a luz de emergência sobre a porta, as
 // telas, os LEDs e a lanterna de capacete do jogador (L / RB liga e desliga).
+// O MGP-101 é desenhado em cena própria, com luzes próprias: no apagão elas
+// também baixam e o painel (material sem iluminação) é escurecido por tinta.
+// O LCD fica intocado — retroiluminado, continua legível no escuro.
 //
 // A troca de visibilidade das luzes só acontece no início da fase (recompila
 // os shaders uma vez). Ligar/desligar a lanterna mexe apenas na intensidade,
 // para não travar o jogo no meio da busca.
 export class Blackout {
-  constructor(sceneManager, mats) {
+  constructor(sceneManager, mats, viewmodel = null) {
     this.sm = sceneManager;
     this.mats = mats;
+    // face do aparelho: a malha cujo material usa a textura do painel
+    this.faceMat = null;
+    viewmodel?.group.traverse((o) => {
+      if (o.isMesh && o.material.map && o.material.map === viewmodel.faceTexture) this.faceMat = o.material;
+    });
     this.active = false;
     this.flashlightOn = true;
     this._t = 0;
@@ -21,6 +29,9 @@ export class Blackout {
       sun: sceneManager.sun.intensity,
       panel: mats.lightPanel.emissiveIntensity,
       ceilEmissive: mats.ceiling.emissive.clone(),
+      vmHemi: sceneManager.vmHemi.intensity,
+      vmKey: sceneManager.vmKey.intensity,
+      face: this.faceMat ? this.faceMat.color.clone() : null,
     };
 
     this.flashlightIntensity = 26;
@@ -58,6 +69,21 @@ export class Blackout {
       this.flashlightOn = true;
       this.flashlight.intensity = this.flashlightIntensity;
     }
+    this._applyDevice();
+  }
+
+  // Luz sobre o MGP-101: quase nada no escuro, um pouco da lanterna quando ligada.
+  _applyDevice() {
+    const b = this._base, sm = this.sm;
+    if (!this.active) {
+      sm.vmHemi.intensity = b.vmHemi;
+      sm.vmKey.intensity = b.vmKey;
+      if (this.faceMat) this.faceMat.color.copy(b.face);
+      return;
+    }
+    sm.vmHemi.intensity = this.flashlightOn ? 0.22 : 0.06;
+    sm.vmKey.intensity = this.flashlightOn ? 0.3 : 0.05;
+    if (this.faceMat) this.faceMat.color.setHex(this.flashlightOn ? 0x5c626b : 0x1e2227);
   }
 
   // Devolve true quando a lanterna mudou de estado (só existe no Blackout).
@@ -65,6 +91,7 @@ export class Blackout {
     if (!this.active) return false;
     this.flashlightOn = !this.flashlightOn;
     this.flashlight.intensity = this.flashlightOn ? this.flashlightIntensity : 0;
+    this._applyDevice();
     return true;
   }
 
