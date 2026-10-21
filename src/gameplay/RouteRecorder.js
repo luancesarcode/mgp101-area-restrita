@@ -27,14 +27,11 @@ export class RouteRecorder {
     return `hsl(${Math.round(210 * (1 - t))}, 95%, 55%)`;
   }
 
-  // `bounds` e `markers` permitem desenhar outros mapas (modo Usina);
-  // sem eles, vale o enquadramento do laboratório.
-  draw(canvas, colliders, source, startPos, bounds = { minX: -11.3, maxX: 11.3, minZ: -8.3, maxZ: 8.3 }, markers = []) {
+  draw(canvas, colliders, source, startPos) {
     const g = canvas.getContext('2d');
     const W = canvas.width, H = canvas.height;
-    const bw = bounds.maxX - bounds.minX, bd = bounds.maxZ - bounds.minZ;
-    const sx = (x) => (x - bounds.minX) / bw * W;
-    const sz = (z) => (z - bounds.minZ) / bd * H;
+    const sx = (x) => (x + 11.3) / 22.6 * W;
+    const sz = (z) => (z + 8.3) / 16.6 * H;
 
     g.fillStyle = '#0d1117';
     g.fillRect(0, 0, W, H);
@@ -43,7 +40,7 @@ export class RouteRecorder {
     g.fillStyle = 'rgba(150, 160, 172, 0.28)';
     for (const b of colliders) {
       if (b.hideOnMap) continue; // laje do teto: colide, mas não é mobília
-      g.fillRect(sx(b.min.x), sz(b.min.z), (b.max.x - b.min.x) / bw * W, (b.max.z - b.min.z) / bd * H);
+      g.fillRect(sx(b.min.x), sz(b.min.z), (b.max.x - b.min.x) / 22.6 * W, (b.max.z - b.min.z) / 16.6 * H);
     }
 
     // rota colorida pela taxa de dose no instante
@@ -67,11 +64,5 @@ export class RouteRecorder {
     g.font = '20px "Segoe UI", sans-serif';
     g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillText('☢', sx(source.position.x), sz(source.position.z));
-
-    for (const m of markers) {
-      g.fillStyle = m.color || '#ffffff';
-      g.font = m.font || '20px "Segoe UI", sans-serif';
-      g.fillText(m.text, sx(m.x), sz(m.z));
-    }
   }
 }

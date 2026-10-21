@@ -26,11 +26,17 @@ Documento de referência do sistema de dificuldade, objetivo e progressão do
 | **Treinamento** | 7,0 m | 40 µSv | nunca | ×1 | 2 |
 | **Normal** | 2,8 m | 10 µSv | 80 s | ×1,7 | 3 |
 | **Difícil** | sem campo | 8 µSv | 35 s | ×2,0 | 4 |
+| **Blackout** | 2,8 m | 10 µSv | 80 s | ×1,7 | 3 |
 
 - `fieldFadeStart`: distância em que o campo visual começa a aparecer.
 - `doseLimit`: dose acumulada máxima da missão.
 - `destabilizeAfter`: prazo até a fonte aumentar sua emissão uma vez.
 - `maxDecoys`: limite de fontes falsas NORM do perfil.
+
+No **Blackout** a energia do laboratório cai: luminárias, forro e luz ambiente
+se apagam, restando a luz de emergência sobre a porta, as telas e a lanterna de
+capacete (`L` no teclado, `RB` no controle). A pressão vem de enxergar pouco,
+não de números mais duros: os valores são os do Normal (`src/effects/Blackout.js`).
 
 O campo e a dose não apertam a cada fase. A instabilidade chega mais cedo até
 um piso seguro, e seu multiplicador para de crescer ao atingir o teto do perfil.
@@ -118,6 +124,7 @@ diferença de altura. Por isso, a coluna de 0,4 m representa um pior caso teóri
 | Treinamento | nunca | nunca | ×1 |
 | Normal | 80 s | 36 s | ×2,2 |
 | Difícil | 35 s | 18 s | ×2,6 |
+| Blackout | 80 s | 36 s | ×2,2 |
 
 Os pisos de 36/18 segundos evitam que a instabilidade seja um multiplicador
 praticamente permanente desde o começo. Depois do evento, a leitura ainda pode

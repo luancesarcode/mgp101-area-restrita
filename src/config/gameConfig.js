@@ -60,8 +60,10 @@ export const DIFFICULTIES = {
   training: { key: 'training', label: 'Treinamento', fieldFadeStart: 7.0, doseLimit: 40, maxDecoys: 2 },
   normal:   { key: 'normal',   label: 'Normal',      fieldFadeStart: 2.8, doseLimit: 10, maxDecoys: 3 },
   hard:     { key: 'hard',     label: 'Difícil',     fieldFadeStart: 0,   doseLimit: 8,  maxDecoys: 4 },
+  // Blackout: sem energia no laboratório; só a lanterna de capacete ilumina.
+  blackout: { key: 'blackout', label: 'Blackout',    fieldFadeStart: 2.8, doseLimit: 10, maxDecoys: 3, blackout: true },
 };
-export const MENU_DIFFICULTY_PARTICLES = Object.freeze({ training: 1.0, normal: 1.8, hard: 3.0 });
+export const MENU_DIFFICULTY_PARTICLES = Object.freeze({ training: 1.0, normal: 1.8, hard: 3.0, blackout: 2.4 });
 
 // Dificuldades do jogo: estes valores não representam normas reais de dose.
 // A fonte fica instável uma vez por fase, exceto no treinamento.
@@ -70,6 +72,10 @@ Object.assign(DIFFICULTIES.training, {
   destabilizeMin: Infinity, destabilizeStep: 0, destabilizeGrowth: 0, destabilizeMax: 1,
 });
 Object.assign(DIFFICULTIES.normal, {
+  destabilizeAfter: 80, destabilizeMultiplier: 1.7,
+  destabilizeMin: 35, destabilizeStep: 4, destabilizeGrowth: 0.04, destabilizeMax: 2.2,
+});
+Object.assign(DIFFICULTIES.blackout, {
   destabilizeAfter: 80, destabilizeMultiplier: 1.7,
   destabilizeMin: 35, destabilizeStep: 4, destabilizeGrowth: 0.04, destabilizeMax: 2.2,
 });
@@ -86,31 +92,3 @@ export const SETTINGS_COOKIE = 'mgp101_settings';
 export const CAMPAIGN_SLOT_COUNT = 3;
 export const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 export const STORAGE_FALLBACK_PREFIX = 'cookie_backup_';
-
-// ==== MODO USINA · BLOCO 4 ==================================================
-// Modo avulso (fora da campanha): a usina fictícia depois da explosão do
-// reator. Vários fragmentos de grafite ativos ficam misturados a blocos
-// inertes; o jogador os identifica com o MGP-101, carrega cada um até um
-// contêiner blindado e evacua pelo portão. Valores de jogo, não normativos.
-export const PLANT_PROFILES = {
-  recon: {
-    key: 'recon', label: 'Usina · Reconhecimento',
-    hotFragments: 3, minReactorFragments: 1,
-    doseLimit: 250, auraDistance: 6,
-    fragmentIntensity: [1300, 2000], coreIntensity: 240000,
-    decoys: 6, decoyIntensity: [30, 140],
-    surgeEvery: [95, 135], surgeMultiplier: 1.6, surgeDuration: 12,
-  },
-  liquidator: {
-    key: 'liquidator', label: 'Usina · Liquidante',
-    hotFragments: 5, minReactorFragments: 2,
-    doseLimit: 200, auraDistance: 2.2,
-    fragmentIntensity: [1800, 2800], coreIntensity: 360000,
-    decoys: 9, decoyIntensity: [60, 260],
-    surgeEvery: [60, 95], surgeMultiplier: 2.0, surgeDuration: 14,
-  },
-};
-export const PLANT_CORE_SHIELD_EXP = 0.6;  // gama duro do núcleo atravessa melhor o concreto
-export const PLANT_CARRY_DISTANCE = 0.95;  // m — fragmento seguro à frente, na ponta da tenaz
-export const PLANT_GRAB_DIST = 2.6;        // m — alcance para recolher um bloco de grafite
-export const PLANT_CASK_DIST = 3.0;        // m — alcance para depositar no contêiner

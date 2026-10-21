@@ -32,7 +32,7 @@ main.js
 | `physics/InteractionSystem.js` | Interação, objetos soltos, colisões e passo fixo |
 | `equipment/` | Malha do monitor e emulação do LCD |
 | `effects/` | Campo visível, atmosfera e brasas |
-| `gameplay/` | Missão, saúde, mapa de rota e o modo Usina · Bloco 4 (ver [MODO-USINA.md](MODO-USINA.md)) |
+| `gameplay/` | Missão, saúde e mapa de rota |
 | `ui/` | HUD, menus, pausa e Gamepad API |
 | `core/Game.js` | Progressão, estados, bindings e loop principal |
 

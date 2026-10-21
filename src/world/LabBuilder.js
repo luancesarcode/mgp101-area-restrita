@@ -202,7 +202,6 @@ export class LabBuilder {
       bucket: this.bucket,
       exitDoor: this.exitDoor,
       mats: this.mats,
-      textures: this.tex, // reaproveitadas pelo modo Usina
     };
   }
 

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { DIFFICULTIES, MENU_DIFFICULTY_PARTICLES, PLANT_PROFILES } from '../config/gameConfig.js';
+import { DIFFICULTIES, MENU_DIFFICULTY_PARTICLES } from '../config/gameConfig.js';
 import { deleteCampaignSlot, loadCampaignSlots } from '../storage/persistence.js';
 import { EmberField } from '../effects/EmberField.js';
 
@@ -17,6 +17,7 @@ function controlsHelpHTML(gamepad) {
       '<span class="control-input">Ctrl</span><span>Agachar</span>' +
       '<span class="control-input">F</span><span>Interagir, pegar/soltar e retirar tampas</span>' +
       '<span class="control-input">Q</span><span>Examinar o detector</span>' +
+      '<span class="control-input">L</span><span>Lanterna (dificuldade Blackout)</span>' +
       '<span class="control-input">Scroll ↑↓</span><span>Inclinar objeto como LB + analógico direito</span>' +
       '<span class="control-input">M1 / M2</span><span>Girar continuamente para esquerda/direita, como LT/RT</span>' +
       '<span class="control-input">Shift + Scroll</span><span>Ajustar a distância do objeto</span>' +
@@ -31,6 +32,7 @@ function controlsHelpHTML(gamepad) {
     `<span class="control-input">${xboxBadge('B', 'b')}</span><span>Agachar / voltar</span>` +
     `<span class="control-input">${xboxBadge('X', 'x')}</span><span>Interagir, pegar/soltar e retirar tampas</span>` +
     `<span class="control-input">${xboxBadge('Y', 'y')}</span><span>Examinar o detector</span>` +
+    `<span class="control-input">${xboxBadge('RB')}</span><span>Lanterna (dificuldade Blackout)</span>` +
     `<span class="control-input">${xboxBadge('LB')}</span><span>Segure para manipular o objeto na mão</span>` +
     '<span class="control-input">LB + Analógico D</span><span>Girar objeto nos eixos X/Y</span>' +
     '<span class="control-input">LB + LT/RT</span><span>Girar objeto no eixo Z</span>' +
@@ -90,9 +92,8 @@ function handleGamepadSettings(owner, action) {
 // teclado (▲▼/W/S + Enter) e mouse, seletor ▶ piscante, LCD ao vivo medindo o
 // fundo, partículas de radiação e painel de informações contextual.
 export class StartMenu {
-  constructor(onStart, onContinue, settings, audio, onStartPlant = () => {}) {
+  constructor(onStart, onContinue, settings, audio) {
     this.screen = document.getElementById('start-screen');
-    this.onStartPlant = onStartPlant;
     this.listEl = document.getElementById('menu-list');
     this.infoEl = document.getElementById('menu-info');
     this.lcdEl = document.getElementById('start-lcd');
@@ -106,7 +107,6 @@ export class StartMenu {
       main: [
         { label: 'CONTINUAR', requiresSave: true, action: () => this._setPage('saves') },
         { label: 'NOVO JOGO', action: () => this._setPage('diff') },
-        { label: 'USINA · BLOCO 4', action: () => this._setPage('plant') },
         { label: 'CONFIGURAÇÕES', action: () => this._showSettings() },
         { label: 'RECORDES', action: () => this._showContent('RECORDES', () => this._recordsInfo()) },
         {
@@ -124,23 +124,6 @@ export class StartMenu {
       ],
       saves: [],
       newSlots: [],
-      // modo avulso: a usina depois da explosão do reator (sem slots de campanha)
-      plant: [
-        {
-          label: 'RECONHECIMENTO',
-          info: '<b>Usina · Reconhecimento</b>: o reator do Bloco 4 explodiu. Encontre <b>3 fragmentos ativos</b> de grafite ' +
-                'entre os blocos espalhados, leve cada um na tenaz até um contêiner blindado e evacue pelo portão. ' +
-                'Orçamento de 250 µSv; a aura dos ativos aparece a 6 m.',
-          action: () => this.onStartPlant(PLANT_PROFILES.recon),
-        },
-        {
-          label: 'LIQUIDANTE',
-          info: '<b>Usina · Liquidante</b>: <b>5 fragmentos ativos</b>, ao menos 2 no salão do reator, núcleo mais forte e ' +
-                'picos de emissão frequentes. Orçamento de 200 µSv; a aura só aparece a 2 m. Confie no MGP-101.',
-          action: () => this.onStartPlant(PLANT_PROFILES.liquidator),
-        },
-        { label: 'VOLTAR', info: 'Retornar ao menu principal.', isBack: true, action: () => this._setPage('main') },
-      ],
       diff: [
         {
           label: 'TREINAMENTO',
@@ -159,6 +142,12 @@ export class StartMenu {
           info: '<b>Difícil</b>: nenhum campo visível e orçamento de 8 µSv. ' +
                 'A instabilidade começa em 00:35 e nunca ocorre antes de 00:18. Só o detector guia você.',
           action: () => this._chooseNewSlot(DIFFICULTIES.hard),
+        },
+        {
+          label: 'BLACKOUT',
+          info: '<b>Blackout</b>: a energia do laboratório caiu. Só a lanterna de capacete (L) ilumina o caminho. ' +
+                'Campo a 2,8 m, orçamento de 10 µSv e a instabilidade da fonte do Normal.',
+          action: () => this._chooseNewSlot(DIFFICULTIES.blackout),
         },
         { label: 'VOLTAR', info: 'Retornar ao menu principal.', isBack: true, action: () => this._setPage('main') },
       ],
@@ -269,7 +258,7 @@ export class StartMenu {
     this.listEl.style.display = 'block';
     this.pageEl.style.display = 'none';
     // descrição contextual para dificuldade e saves
-    this.infoEl.style.display = ['diff', 'saves', 'newSlots', 'confirm', 'plant'].includes(name) ? 'block' : 'none';
+    this.infoEl.style.display = ['diff', 'saves', 'newSlots', 'confirm'].includes(name) ? 'block' : 'none';
     this.infoEl.classList.toggle('save-summary', name === 'saves');
     if (name === 'main') this.embers.setIntensity(1.2);
     this.listEl.innerHTML = '';
@@ -394,7 +383,7 @@ export class StartMenu {
     else if (action === 'back') {
       if (this.page === 'confirm') this._setPage('newSlots');
       else if (this.page === 'newSlots') this._setPage('diff');
-      else if (['diff', 'saves', 'plant'].includes(this.page)) this._setPage('main');
+      else if (['diff', 'saves'].includes(this.page)) this._setPage('main');
       else return false;
     } else return false;
     return true;
@@ -421,20 +410,18 @@ export class StartMenu {
     };
     return `<b>Melhores tempos</b><br>` +
       `Treinamento: <b>${fmt('training')}</b> · Normal: <b>${fmt('normal')}</b> · ` +
-      `Difícil: <b>${fmt('hard')}</b><br>` +
-      `Usina · Reconhecimento: <b>${fmt('plant_recon')}</b> · Usina · Liquidante: <b>${fmt('plant_liquidator')}</b>`;
+      `Difícil: <b>${fmt('hard')}</b> · Blackout: <b>${fmt('blackout')}</b>`;
   }
 
   _select(i) {
     this.index = (i + this.items.length) % this.items.length;
     this.items.forEach((item, k) => item.el.classList.toggle('sel', k === this.index));
-    if (['diff', 'saves', 'newSlots', 'confirm', 'plant'].includes(this.page)) {
+    if (['diff', 'saves', 'newSlots', 'confirm'].includes(this.page)) {
       this.infoEl.innerHTML = this.items[this.index].info || '';
     }
-    if (this.page === 'plant') this.embers.setIntensity([2.2, 3.4, 1.2][this.index] ?? 1.2);
     if (this.page === 'diff') {
       // o "fogo" reflete o risco: TREINAMENTO → DIFÍCIL (VOLTAR = neutro)
-      const intensity = [1.0, 1.8, 3.0, 1.2][this.index] ?? 1.2;
+      const intensity = [1.0, 1.8, 3.0, 2.4, 1.2][this.index] ?? 1.2;
       this.embers.setIntensity(intensity);
     } else if (this.page === 'saves') {
       this.embers.setIntensity(this.items[this.index].particleIntensity ?? 0.7);
@@ -470,7 +457,7 @@ export class StartMenu {
       case 'Escape':
         if (this.page === 'confirm') this._setPage('newSlots');
         else if (this.page === 'newSlots') this._setPage('diff');
-        else if (['diff', 'saves', 'plant'].includes(this.page)) this._setPage('main');
+        else if (['diff', 'saves'].includes(this.page)) this._setPage('main');
         break;
     }
   }
@@ -910,6 +897,7 @@ export class XboxGamepadController {
         if (justPressed[B.X]) this.game._interactionDown();
         if (justReleased[B.X]) this.game._interactionUp();
         if (justPressed[B.Y]) this.game.viewmodel.inspect = !this.game.viewmodel.inspect;
+        if (justPressed[B.RB]) this.game._toggleFlashlight();
       }
     }
 

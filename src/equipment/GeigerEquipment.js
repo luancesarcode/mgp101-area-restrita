@@ -324,25 +324,10 @@ export class DetectorViewmodel {
     const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1f3577, roughness: 0.55, metalness: 0.1 });
     this.group.add(new THREE.Mesh(bodyGeo, bodyMat));
 
-    // O painel SVG é a base visual do aparelho. O canvas acima dele é apenas
-    // um overlay transparente para o visor, que continua mostrando a dose em
-    // tempo real durante o jogo.
+    // O painel é desenhado no canvas com os SVGs embutidos em MGP_PANEL_SVG_DATA.
+    // O visor usa uma textura própria, atualizada em tempo real durante o jogo.
     const panelW = W * svg.width / (svg.right - svg.left);
     const panelH = H * svg.height / (svg.bottom - svg.top);
-    const loader = new THREE.TextureLoader();
-    const panelTexture = loader.load('SVG/MGP.svg', (texture) => {
-      texture.colorSpace = THREE.SRGBColorSpace;
-      texture.anisotropy = 4;
-    });
-    panelTexture.colorSpace = THREE.SRGBColorSpace;
-    const panel = new THREE.Mesh(
-      new THREE.PlaneGeometry(panelW, panelH),
-      new THREE.MeshBasicMaterial({ map: panelTexture, transparent: true, depthWrite: false })
-    );
-    panel.position.z = 0.0065;
-    panel.renderOrder = 2;
-    this.group.add(panel);
-
     this.faceCanvas = document.createElement('canvas');
     // A face mantém a mesma proporção, mas usa 1/4 dos pixels da versão
     // anterior — suficiente para o viewmodel e muito mais leve na GPU.

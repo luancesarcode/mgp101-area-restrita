@@ -29,9 +29,7 @@ export class SceneManager {
 
     // Composer: cena → bloom (apenas áreas brilhantes) → saída
     this.composer = new EffectComposer(this.renderer);
-    this.activeScene = this.scene;
-    this.renderPass = new RenderPass(this.scene, this.camera);
-    this.composer.addPass(this.renderPass);
+    this.composer.addPass(new RenderPass(this.scene, this.camera));
     this.bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.38, 0.4, 0.75);
     this.composer.addPass(this.bloom);
     this.composer.addPass(new OutputPass());
@@ -57,19 +55,13 @@ export class SceneManager {
     this.useComposer = level < 2; // nível 2: render direto, sem pós-processamento
   }
 
-  // Troca o mundo renderizado (laboratório ↔ usina). O viewmodel do MGP-101
-  // continua na própria cena, por cima de qualquer mundo.
-  setWorld(scene, far = 80) {
-    this.activeScene = scene;
-    this.renderPass.scene = scene;
-    this.camera.far = far;
-    this.camera.updateProjectionMatrix();
-  }
-
   _buildLights() {
-    this.scene.add(new THREE.HemisphereLight(0xdfe8f5, 0x39404d, 0.85));
+    // guardadas para a dificuldade Blackout apagar o laboratório
+    this.hemi = new THREE.HemisphereLight(0xdfe8f5, 0x39404d, 0.85);
+    this.scene.add(this.hemi);
 
     const sun = new THREE.DirectionalLight(0xffffff, 1.4);
+    this.sun = sun;
     sun.position.set(8, 10, 5);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
@@ -100,7 +92,7 @@ export class SceneManager {
       this.composer.render();
     } else {
       this.renderer.clear();
-      this.renderer.render(this.activeScene, this.camera);
+      this.renderer.render(this.scene, this.camera);
     }
     this.renderer.clearDepth();
     this.renderer.render(this.vmScene, this.vmCamera);

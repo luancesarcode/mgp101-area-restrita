@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { BACKGROUND_DOSE, DIFFICULTIES, EQUIPMENT_MAX_DOSE, EVAC_PHASE, MENU_MUSIC_FROM_PHASE, PHASE_INTENSITY_MAX, PLAYER_HEIGHT } from '../config/gameConfig.js';
-import { PlantMode } from '../gameplay/PlantMode.js';
 import { GameSettings, deleteCampaignSlot, saveCampaignProgress } from '../storage/persistence.js';
 import { GameAudio } from '../audio/GameAudio.js';
 import { SceneManager } from '../rendering/SceneManager.js';
@@ -15,6 +14,7 @@ import { HUD } from '../ui/HUD.js';
 import { DetectorViewmodel } from '../equipment/GeigerEquipment.js';
 import { RadiationField } from '../effects/RadiationField.js';
 import { EpicAtmosphere } from '../effects/EpicAtmosphere.js';
+import { Blackout } from '../effects/Blackout.js';
 import { EmberField } from '../effects/EmberField.js';
 import { HealthSystem } from '../gameplay/HealthSystem.js';
 import { RouteRecorder } from '../gameplay/RouteRecorder.js';
@@ -47,6 +47,7 @@ export class Game {
     this.viewmodel = new DetectorViewmodel(this.sceneManager.vmScene, this.sceneManager.vmCamera, this.detector, this.audio);
     this.field = new RadiationField(this.sceneManager.scene, this.source);
     this.atmosphere = new EpicAtmosphere(this.sceneManager.scene, lab.mats.ceiling);
+    this.blackout = new Blackout(this.sceneManager, lab.mats);
     this.hud = new HUD();
     this.interact = new InteractionSystem(lab.containers, lab.colliders, this.source, this.sceneManager.camera, this.hud, this.audio);
     // objetos soltos do cenário (caixas das estantes, teclados, mouses):
@@ -58,10 +59,6 @@ export class Game {
     this.mission = new MissionManager(this.hud, this.source, () => this._end(true), () => this._end(false, 'dose'));
     this._dangerWarned = false;
     this._sourceDestabilized = false;
-    // modo Usina · Bloco 4: mundo próprio, construído na primeira partida
-    this.mode = 'lab';
-    this.plant = new PlantMode(lab.textures);
-    this.plantProfile = null;
 
     this.baseDifficulty = DIFFICULTIES.training;
     this.saveSlot = 1;
@@ -175,6 +172,8 @@ export class Game {
     // nas fases iniciais e na evacuação. As partículas aceleram até a fase 12.
     this.atmosphere.setPhase(phase);
     this.atmosphere.setActive(phase >= MENU_MUSIC_FROM_PHASE && !this.difficulty.evacuation);
+    // depois do clima épico: o apagão também escurece o forro que ele tinge
+    this.blackout.setActive(Boolean(this.difficulty.blackout));
     this.evacuation.stop();
     if (this.difficulty.evacuation) this.source.disable();
     else this.source.respawn(this.difficulty.intensityMultiplier, this.difficulty.decoyCount);
@@ -205,7 +204,9 @@ export class Game {
     this.ended = false;
     this._endWon = false;
     this._dangerWarned = false;
-    this._hints = [];
+    this._hints = this.difficulty.blackout
+      ? [{ t: 9, msg: `Sem energia no laboratório. ${this.gamepad?.connected ? 'RB' : 'L'} liga e desliga a lanterna.` }]
+      : [];
     document.getElementById('end-screen').style.display = 'none';
     const campaignScreen = document.getElementById('campaign-screen');
     campaignScreen.classList.remove('visible');
@@ -233,18 +234,16 @@ export class Game {
         this._startPhaseInPlace(saved.phase, DIFFICULTIES[saved.difficulty] || DIFFICULTIES.training);
       },
       this.settings,
-      this.audio,
-      (profile) => this._startPlant(profile)
+      this.audio
     );
     this.pauseMenu = new PauseMenu(
       () => this._requestResume(),
-      () => (this.mode === 'plant' ? this._startPlant(this.plantProfile) : this._startPhaseInPlace(this.phase)),
+      () => this._startPhaseInPlace(this.phase),
       () => this._returnToMenu(),
       this.settings,
       this.audio
     );
     document.getElementById('btn-next-phase').addEventListener('click', () => {
-      if (this.mode === 'plant') { this._startPlant(this.plantProfile); return; }
       this._startPhaseInPlace(this._endWon ? this.phase + 1 : this.phase);
     });
     document.getElementById('btn-end-menu').addEventListener('click', () => {
@@ -304,8 +303,7 @@ export class Game {
     document.getElementById('pause-screen').style.display = 'none';
     document.body.classList.add('gameplay-active');
     this.audio.stopMenuMusic();
-    // na usina toca a trilha épica (reiniciada só ao vir do menu)
-    this.audio.playPhaseMusic(this.mode === 'plant' ? MENU_MUSIC_FROM_PHASE + 1 : this.phase, enteringFromMenu);
+    this.audio.playPhaseMusic(this.phase, enteringFromMenu);
     this.hud.show();
     if (!this.playing) {
       this.playing = true;
@@ -333,11 +331,7 @@ export class Game {
     document.body.classList.remove('gameplay-active');
     this.player.setGamepadInput(0, 0, false, false);
     this.interact.keyUpF();
-    this.pauseMenu.setStats(this.mode === 'plant'
-      ? `${this.difficulty.label} · Tempo <b>${this._fmtTime(this.elapsed)}</b> · ` +
-        `Dose <b>${this.detector.accumulated.toFixed(3)} / ${this.plantProfile.doseLimit} µSv</b> · ` +
-        `Saúde <b>${Math.round(this.health.health)}%</b> · Fragmentos <b>${this.plant.contained}/${this.plant.total}</b>`
-      : this.difficulty.evacuation
+    this.pauseMenu.setStats(this.difficulty.evacuation
       ? `${this.difficulty.label} · <b>Protocolo de evacuação em andamento</b>`
       : `${this.difficulty.label} · Tempo <b>${this._fmtTime(this.elapsed)}</b> · ` +
         `Dose <b>${this.detector.accumulated.toFixed(3)} / ${this.mission.doseLimit} µSv</b> · ` +
@@ -350,11 +344,11 @@ export class Game {
     // A campanha continua salva, mas a simulação atual deixa de rodar.
     // Assim, voltar ao menu não permite que tempo, dose ou missão avancem.
     this.interact.cancelF();
-    if (this.mode === 'plant') this._leavePlant();
     this.playing = false;
     this.paused = false;
     this.ended = false;
     this.atmosphere.setActive(false); // volta o cenário ao normal no menu
+    this.blackout.setActive(false);
     document.body.classList.remove('gameplay-active');
     this.player.setGamepadInput(0, 0, false, false);
     this.audio.stopPhaseMusic();
@@ -396,6 +390,7 @@ export class Game {
       if (e.code === 'KeyQ' && !e.repeat) { // examinar o MGP-101 de perto
         this.viewmodel.inspect = !this.viewmodel.inspect;
       }
+      if (e.code === 'KeyL' && !e.repeat) this._toggleFlashlight();
     });
     addEventListener('keyup', (e) => {
       if (e.code === 'KeyF') this._interactionUp();
@@ -405,15 +400,17 @@ export class Game {
 
   _interactionDown() {
     if (!this.playing || this.ended || this.paused) return;
-    if (this.mode === 'plant') {
-      this.plant.interact(this.sceneManager.camera, this.player, this.hud, this.audio);
-      return;
-    }
     const result = this.interact.keyDownF();
     if (result === 'collected') this.mission.collect();
     if (result === 'evacuation-key' && this.evacuation.collectKey()) {
       this.mission.collectEvacuationKey();
     }
+  }
+
+  // Lanterna de capacete (só existe na dificuldade Blackout).
+  _toggleFlashlight() {
+    if (!this.playing || this.ended || this.paused) return;
+    if (this.blackout.toggleFlashlight()) this.audio.uiClick();
   }
 
   _interactionUp() {
@@ -462,20 +459,6 @@ export class Game {
       this._adaptQuality(d.fps);
     }
     if (!d.enabled) return;
-
-    if (this.mode === 'plant') {
-      if (d.sphere) d.sphere.visible = d.line.visible = false;
-      if (refreshed) {
-        const cam = this.sceneManager.camera.position, r = this.plant.radiation;
-        document.getElementById('debug').innerHTML =
-          `FPS: ${d.fps}<br>${this.difficulty.label}<br>Zona: ${r.zoneName(cam)} (${r.zoneRate(cam)} µSv/h)<br>` +
-          `Núcleo: ${r.coreDoseAt(cam).toFixed(1)} µSv/h (×${r.coreMultiplier})<br>` +
-          `Fragmento ativo mais próximo: ${this.plant.nearestActiveDistance(cam).toFixed(1)} m<br>` +
-          `Dose real: ${this.detector.trueDose.toFixed(2)} µSv/h<br>` +
-          `Saúde: ${this.health.health.toFixed(1)} (dano ${this.health.damageRate.toFixed(2)} HP/s)`;
-      }
-      return;
-    }
 
     if (this.difficulty.evacuation) {
       if (d.sphere) d.sphere.visible = d.line.visible = false;
@@ -620,166 +603,6 @@ export class Game {
     this.player.controls.unlock();
   }
 
-  // ==== MODO USINA · BLOCO 4 ===============================================
-
-  _startPlant(profile) {
-    this.plantProfile = profile;
-    if (this.evacuation.active) this.evacuation.stop();
-    this.atmosphere.setActive(false);
-    this.interact.cancelF();
-    const world = this.plant.ensureBuilt();
-    this.mode = 'plant';
-    this.sceneManager.setWorld(world.scene, 500);
-    this.player.colliders = world.colliders;
-    this.detector.source = this.plant.radiation;
-    this.plant.start(profile);
-    this.difficulty = { label: profile.label, evacuation: false, healthDamage: true, hints: false, plant: true };
-
-    this.detector.reset();
-    this.detector.setEvacuation(false);
-    this.recorder.reset();
-    this.health.reset();
-    this.mission.reset();
-    this.mission.ended = true; // a missão do laboratório fica parada
-    this.viewmodel.resetPose();
-    this.hud.setEvacuation(false);
-    this.hud.setHint('');
-
-    this.player.position.copy(world.startPos);
-    this.player.velocity.set(0, 0, 0);
-    this.player.height = PLAYER_HEIGHT;
-    this.player.onGround = true;
-    this.player._syncCamera();
-    this.sceneManager.camera.quaternion.identity(); // olhando para o prédio (−z)
-
-    this.elapsed = 0;
-    this._hudTimer = 0;
-    this.ended = false;
-    this._endWon = false;
-    this._dangerWarned = false;
-    this._plantDoseWarned = false;
-    this._hints = [];
-    document.getElementById('end-screen').style.display = 'none';
-    const campaignScreen = document.getElementById('campaign-screen');
-    campaignScreen.classList.remove('visible');
-    campaignScreen.style.display = 'none';
-    this.hud.show();
-    this.hud.setMission(this.plant.missionText());
-    this.detector.showTransient('BLOCO-4', 'INÍCIO', 1.4);
-    this._requestResume();
-  }
-
-  _leavePlant() {
-    this.plant.stop();
-    this.mode = 'lab';
-    this.sceneManager.setWorld(this.sceneManager.scene, 80);
-    this.player.colliders = this.colliders;
-    this.detector.source = this.source;
-    this.hud.setHint('');
-    this.player.position.copy(this.startPos);
-    this.player._syncCamera();
-  }
-
-  _tickPlant(dt) {
-    const cam = this.sceneManager.camera;
-    if (this.playing && !this.ended && !this.paused) {
-      this.elapsed += dt;
-      this.player.update(dt);
-      // depois do jogador: o tremor dos picos de emissão desloca a câmera
-      const result = this.plant.update(dt, cam, this.player, this.hud, this.audio);
-      this.detector.update(dt, cam.position);
-      this.recorder.update(dt, this.player.position, this.detector.trueDose);
-      this.health.update(dt, this.detector.trueDose);
-      this.player.healthFactor = this.health.speedFactor();
-      if (this.health.damageRate > 0 && !this._dangerWarned) {
-        this._dangerWarned = true;
-        this.hud.toast('☢ Queimaduras radioativas! Largue o fragmento ou procure abrigo.', 4);
-      } else if (this.health.damageRate === 0) {
-        this._dangerWarned = false;
-      }
-      const limit = this.plantProfile.doseLimit;
-      if (!this._plantDoseWarned && this.detector.accumulated > limit * 0.8) {
-        this._plantDoseWarned = true;
-        this.hud.toast('⚠ 80% do orçamento de dose consumido. Planeje a rota mais curta.', 5);
-      }
-      if (result === 'won') this._endPlant(true);
-      else if (this.health.isDead()) this._endPlant(false, 'health');
-      else if (this.detector.accumulated >= limit) this._endPlant(false, 'dose');
-      else {
-        this._hudTimer += dt;
-        if (this._hudTimer >= 0.1) {
-          this._hudTimer = 0;
-          this.hud.update(this.elapsed, this.detector.accumulated, limit, this.health.health);
-        }
-        this.hud.setDoseRate(this.detector.trueDose);
-        this.hud.setDamage(this.health.damageRate, this.health.health, this.elapsed);
-      }
-    }
-    if (!this.paused) {
-      this.viewmodel.update(dt, this.player.speedXZ, this.player.running, this.player.onGround);
-    }
-    this._updateDebug(dt);
-    this.sceneManager.render();
-  }
-
-  _endPlant(won, reason = null) {
-    this.ended = true;
-    this._endWon = won;
-    document.body.classList.remove('gameplay-active');
-    this.player.setGamepadInput(0, 0, false, false);
-    this.hud.hide();
-    this.hud.setHint('');
-    const profile = this.plantProfile;
-    const world = this.plant.world;
-
-    let recordLine = '';
-    if (won) {
-      const key = `mgp101_best_plant_${profile.key}`;
-      const best = parseFloat(localStorage.getItem(key));
-      if (!best || this.elapsed < best) {
-        localStorage.setItem(key, this.elapsed.toFixed(1));
-        recordLine = `<br>🏆 Novo recorde (${profile.label}): <b>${this._fmtTime(this.elapsed)}</b>`;
-      } else {
-        recordLine = `<br>Recorde (${profile.label}): <b>${this._fmtTime(best)}</b>`;
-      }
-    }
-    const title = document.getElementById('end-title');
-    const sub = document.getElementById('end-sub');
-    if (won) {
-      title.innerHTML = '☢ <span class="rad">Bloco 4 contido!</span>';
-      sub.textContent = 'Todos os fragmentos ativos estão nos contêineres blindados e você evacuou a usina. ' +
-        'Tempo, distância e blindagem fizeram a diferença.';
-    } else if (reason === 'health') {
-      title.innerHTML = '☢ <span style="color:#ff5252">Síndrome aguda da radiação</span>';
-      sub.textContent = 'A exposição perto do núcleo e dos fragmentos foi longa demais. ' +
-        'Largue o fragmento para se recuperar e use paredes e escombros como blindagem.';
-    } else {
-      title.innerHTML = '⚠ <span style="color:#ff5252">Orçamento de dose esgotado</span>';
-      sub.textContent = 'Você ultrapassou o orçamento da missão. Planeje rotas curtas até o contêiner mais próximo.';
-    }
-    document.getElementById('end-stats').innerHTML =
-      `Modo: <b>${profile.label}</b><br>` +
-      `Tempo: <b>${this._fmtTime(this.elapsed)}</b> · ` +
-      `Dose acumulada: <b>${this.detector.accumulated.toFixed(3)} µSv</b> (orçamento ${profile.doseLimit} µSv) · ` +
-      `Pico: <b>${this.detector.peakDose.toFixed(1)} µSv/h</b><br>` +
-      `Saúde final: <b>${Math.round(this.health.health)}%</b> (mínima: ${Math.round(this.health.minHealth)}%) · ` +
-      `Fragmentos contidos: <b>${this.plant.contained}/${this.plant.total}</b>` +
-      recordLine;
-    document.getElementById('btn-next-phase').textContent = 'Jogar novamente';
-
-    // mapa final: contêineres, ponto de evacuação, fragmentos que ficaram e áreas
-    const markers = [
-      ...world.casks.map((c) => ({ text: '■', x: c.position.x, z: c.position.z, color: '#43df84' })),
-      { text: '⇩', x: 0, z: 28.5, color: '#43df84' },
-      ...this.plant.fragments.filter((f) => f.hot && f.state !== 'deposited')
-        .map((f) => ({ text: '◆', x: f.position.x, z: f.position.z, color: '#ffb347', font: '14px "Segoe UI", sans-serif' })),
-      ...world.mapLabels.map((l) => ({ ...l, color: 'rgba(200,210,220,0.55)', font: 'bold 11px "Segoe UI", sans-serif' })),
-    ];
-    this.recorder.draw(document.getElementById('end-map'), world.colliders, { position: world.core }, world.startPos, world.bounds, markers);
-    document.getElementById('end-screen').style.display = 'flex';
-    this.player.controls.unlock();
-  }
-
   start() {
     this.sceneManager.renderer.setAnimationLoop(() => this._tick());
   }
@@ -788,7 +611,6 @@ export class Game {
     const dt = Math.min(this.clock.getDelta(), 0.05);
     const cam = this.sceneManager.camera;
     this.gamepad.update(dt);
-    if (this.mode === 'plant') { this._tickPlant(dt); return; }
 
     // câmera cinematográfica orbitando o laboratório enquanto o menu está aberto
     if (!this.playing) {
@@ -853,6 +675,7 @@ export class Game {
     if (!this.paused) {
       this.viewmodel.update(dt, this.player.speedXZ, this.player.running, this.player.onGround);
     }
+    this.blackout.update(dt, cam);
     this._updateDebug(dt);
     this.sceneManager.render();
   }
