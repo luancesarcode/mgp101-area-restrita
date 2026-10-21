@@ -86,3 +86,31 @@ export const SETTINGS_COOKIE = 'mgp101_settings';
 export const CAMPAIGN_SLOT_COUNT = 3;
 export const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 export const STORAGE_FALLBACK_PREFIX = 'cookie_backup_';
+
+// ==== MODO USINA · BLOCO 4 ==================================================
+// Modo avulso (fora da campanha): a usina fictícia depois da explosão do
+// reator. Vários fragmentos de grafite ativos ficam misturados a blocos
+// inertes; o jogador os identifica com o MGP-101, carrega cada um até um
+// contêiner blindado e evacua pelo portão. Valores de jogo, não normativos.
+export const PLANT_PROFILES = {
+  recon: {
+    key: 'recon', label: 'Usina · Reconhecimento',
+    hotFragments: 3, minReactorFragments: 1,
+    doseLimit: 250, auraDistance: 6,
+    fragmentIntensity: [1300, 2000], coreIntensity: 240000,
+    decoys: 6, decoyIntensity: [30, 140],
+    surgeEvery: [95, 135], surgeMultiplier: 1.6, surgeDuration: 12,
+  },
+  liquidator: {
+    key: 'liquidator', label: 'Usina · Liquidante',
+    hotFragments: 5, minReactorFragments: 2,
+    doseLimit: 200, auraDistance: 2.2,
+    fragmentIntensity: [1800, 2800], coreIntensity: 360000,
+    decoys: 9, decoyIntensity: [60, 260],
+    surgeEvery: [60, 95], surgeMultiplier: 2.0, surgeDuration: 14,
+  },
+};
+export const PLANT_CORE_SHIELD_EXP = 0.6;  // gama duro do núcleo atravessa melhor o concreto
+export const PLANT_CARRY_DISTANCE = 0.95;  // m — fragmento seguro à frente, na ponta da tenaz
+export const PLANT_GRAB_DIST = 2.6;        // m — alcance para recolher um bloco de grafite
+export const PLANT_CASK_DIST = 3.0;        // m — alcance para depositar no contêiner

@@ -29,7 +29,9 @@ export class SceneManager {
 
     // Composer: cena → bloom (apenas áreas brilhantes) → saída
     this.composer = new EffectComposer(this.renderer);
-    this.composer.addPass(new RenderPass(this.scene, this.camera));
+    this.activeScene = this.scene;
+    this.renderPass = new RenderPass(this.scene, this.camera);
+    this.composer.addPass(this.renderPass);
     this.bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.38, 0.4, 0.75);
     this.composer.addPass(this.bloom);
     this.composer.addPass(new OutputPass());
@@ -53,6 +55,15 @@ export class SceneManager {
     this.composer.setSize(innerWidth, innerHeight);
     this.bloom.strength = [0.38, 0.26, 0][level];
     this.useComposer = level < 2; // nível 2: render direto, sem pós-processamento
+  }
+
+  // Troca o mundo renderizado (laboratório ↔ usina). O viewmodel do MGP-101
+  // continua na própria cena, por cima de qualquer mundo.
+  setWorld(scene, far = 80) {
+    this.activeScene = scene;
+    this.renderPass.scene = scene;
+    this.camera.far = far;
+    this.camera.updateProjectionMatrix();
   }
 
   _buildLights() {
@@ -89,7 +100,7 @@ export class SceneManager {
       this.composer.render();
     } else {
       this.renderer.clear();
-      this.renderer.render(this.scene, this.camera);
+      this.renderer.render(this.activeScene, this.camera);
     }
     this.renderer.clearDepth();
     this.renderer.render(this.vmScene, this.vmCamera);

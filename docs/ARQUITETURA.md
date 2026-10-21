@@ -27,12 +27,12 @@ main.js
 | `storage/persistence.js` | Cookies, fallback local, slots e configurações |
 | `audio/GameAudio.js` | Trilhas, Geiger e efeitos procedurais |
 | `rendering/SceneManager.js` | Renderer, câmeras, luzes, bloom e qualidade |
-| `world/` | Construção do laboratório, superfícies e evacuação |
+| `world/` | Construção do laboratório, texturas procedurais, ambientação, superfícies e evacuação (ver [MODELAGEM-E-TEXTURAS.md](MODELAGEM-E-TEXTURAS.md)) |
 | `radiation/` | Fonte procedural, leitura e blindagem |
 | `physics/InteractionSystem.js` | Interação, objetos soltos, colisões e passo fixo |
 | `equipment/` | Malha do monitor e emulação do LCD |
 | `effects/` | Campo visível, atmosfera e brasas |
-| `gameplay/` | Missão, saúde e mapa de rota |
+| `gameplay/` | Missão, saúde, mapa de rota e o modo Usina · Bloco 4 (ver [MODO-USINA.md](MODO-USINA.md)) |
 | `ui/` | HUD, menus, pausa e Gamepad API |
 | `core/Game.js` | Progressão, estados, bindings e loop principal |
 
@@ -46,7 +46,7 @@ main.js
 - O build usa o caminho-base `/game/`.
 - O monólito permanece como referência, não como dependência de produção.
 
-## Áreas deliberadamente não alteradas
+## Áreas deliberadamente não alteradas na modularização
 
 - balanceamento;
 - física e colisores;
@@ -57,3 +57,5 @@ main.js
 - áudio e volumes;
 - controles e mapeamento Xbox;
 - qualidade adaptativa.
+
+Depois da modularização, os materiais e a geometria do laboratório foram refeitos (texturas procedurais e objetos novos), sem tocar no MGP-101, na interface nem na física. Detalhes em [MODELAGEM-E-TEXTURAS.md](MODELAGEM-E-TEXTURAS.md).

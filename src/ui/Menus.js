@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { DIFFICULTIES, MENU_DIFFICULTY_PARTICLES } from '../config/gameConfig.js';
+import { DIFFICULTIES, MENU_DIFFICULTY_PARTICLES, PLANT_PROFILES } from '../config/gameConfig.js';
 import { deleteCampaignSlot, loadCampaignSlots } from '../storage/persistence.js';
 import { EmberField } from '../effects/EmberField.js';
 
@@ -90,8 +90,9 @@ function handleGamepadSettings(owner, action) {
 // teclado (▲▼/W/S + Enter) e mouse, seletor ▶ piscante, LCD ao vivo medindo o
 // fundo, partículas de radiação e painel de informações contextual.
 export class StartMenu {
-  constructor(onStart, onContinue, settings, audio) {
+  constructor(onStart, onContinue, settings, audio, onStartPlant = () => {}) {
     this.screen = document.getElementById('start-screen');
+    this.onStartPlant = onStartPlant;
     this.listEl = document.getElementById('menu-list');
     this.infoEl = document.getElementById('menu-info');
     this.lcdEl = document.getElementById('start-lcd');
@@ -105,6 +106,7 @@ export class StartMenu {
       main: [
         { label: 'CONTINUAR', requiresSave: true, action: () => this._setPage('saves') },
         { label: 'NOVO JOGO', action: () => this._setPage('diff') },
+        { label: 'USINA · BLOCO 4', action: () => this._setPage('plant') },
         { label: 'CONFIGURAÇÕES', action: () => this._showSettings() },
         { label: 'RECORDES', action: () => this._showContent('RECORDES', () => this._recordsInfo()) },
         {
@@ -122,6 +124,23 @@ export class StartMenu {
       ],
       saves: [],
       newSlots: [],
+      // modo avulso: a usina depois da explosão do reator (sem slots de campanha)
+      plant: [
+        {
+          label: 'RECONHECIMENTO',
+          info: '<b>Usina · Reconhecimento</b>: o reator do Bloco 4 explodiu. Encontre <b>3 fragmentos ativos</b> de grafite ' +
+                'entre os blocos espalhados, leve cada um na tenaz até um contêiner blindado e evacue pelo portão. ' +
+                'Orçamento de 250 µSv; a aura dos ativos aparece a 6 m.',
+          action: () => this.onStartPlant(PLANT_PROFILES.recon),
+        },
+        {
+          label: 'LIQUIDANTE',
+          info: '<b>Usina · Liquidante</b>: <b>5 fragmentos ativos</b>, ao menos 2 no salão do reator, núcleo mais forte e ' +
+                'picos de emissão frequentes. Orçamento de 200 µSv; a aura só aparece a 2 m. Confie no MGP-101.',
+          action: () => this.onStartPlant(PLANT_PROFILES.liquidator),
+        },
+        { label: 'VOLTAR', info: 'Retornar ao menu principal.', isBack: true, action: () => this._setPage('main') },
+      ],
       diff: [
         {
           label: 'TREINAMENTO',
@@ -250,7 +269,7 @@ export class StartMenu {
     this.listEl.style.display = 'block';
     this.pageEl.style.display = 'none';
     // descrição contextual para dificuldade e saves
-    this.infoEl.style.display = ['diff', 'saves', 'newSlots', 'confirm'].includes(name) ? 'block' : 'none';
+    this.infoEl.style.display = ['diff', 'saves', 'newSlots', 'confirm', 'plant'].includes(name) ? 'block' : 'none';
     this.infoEl.classList.toggle('save-summary', name === 'saves');
     if (name === 'main') this.embers.setIntensity(1.2);
     this.listEl.innerHTML = '';
@@ -375,7 +394,7 @@ export class StartMenu {
     else if (action === 'back') {
       if (this.page === 'confirm') this._setPage('newSlots');
       else if (this.page === 'newSlots') this._setPage('diff');
-      else if (['diff', 'saves'].includes(this.page)) this._setPage('main');
+      else if (['diff', 'saves', 'plant'].includes(this.page)) this._setPage('main');
       else return false;
     } else return false;
     return true;
@@ -402,15 +421,17 @@ export class StartMenu {
     };
     return `<b>Melhores tempos</b><br>` +
       `Treinamento: <b>${fmt('training')}</b> · Normal: <b>${fmt('normal')}</b> · ` +
-      `Difícil: <b>${fmt('hard')}</b>`;
+      `Difícil: <b>${fmt('hard')}</b><br>` +
+      `Usina · Reconhecimento: <b>${fmt('plant_recon')}</b> · Usina · Liquidante: <b>${fmt('plant_liquidator')}</b>`;
   }
 
   _select(i) {
     this.index = (i + this.items.length) % this.items.length;
     this.items.forEach((item, k) => item.el.classList.toggle('sel', k === this.index));
-    if (['diff', 'saves', 'newSlots', 'confirm'].includes(this.page)) {
+    if (['diff', 'saves', 'newSlots', 'confirm', 'plant'].includes(this.page)) {
       this.infoEl.innerHTML = this.items[this.index].info || '';
     }
+    if (this.page === 'plant') this.embers.setIntensity([2.2, 3.4, 1.2][this.index] ?? 1.2);
     if (this.page === 'diff') {
       // o "fogo" reflete o risco: TREINAMENTO → DIFÍCIL (VOLTAR = neutro)
       const intensity = [1.0, 1.8, 3.0, 1.2][this.index] ?? 1.2;
@@ -449,7 +470,7 @@ export class StartMenu {
       case 'Escape':
         if (this.page === 'confirm') this._setPage('newSlots');
         else if (this.page === 'newSlots') this._setPage('diff');
-        else if (['diff', 'saves'].includes(this.page)) this._setPage('main');
+        else if (['diff', 'saves', 'plant'].includes(this.page)) this._setPage('main');
         break;
     }
   }
