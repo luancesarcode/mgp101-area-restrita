@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { glowSprite } from './glowSprite.js';
 
 // ==== RADIATIONFIELD ========================================================
 // Campo visual da radiação: núcleo pulsante + halo fresnel (brilha nas
@@ -75,16 +76,19 @@ export class RadiationField {
     const pointsGeo = new THREE.BufferGeometry();
     pointsGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     this.pointsMat = new THREE.PointsMaterial({
-      color: 0x9cff70, size: 0.05, transparent: true, opacity: 0,
+      color: 0x9cff70, size: 0.09, map: glowSprite(), transparent: true, opacity: 0,
       blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true,
     });
     this.points = new THREE.Points(pointsGeo, this.pointsMat);
     this.points.frustumCulled = false;
     this.group.add(this.points);
 
+    // A luz fica direto na cena e SEMPRE visível (apagada = intensidade 0).
+    // Dentro do grupo ela sumia/aparecia com ele, o número de luzes da cena
+    // mudava e o Three.js recompilava todos os shaders: ~0,7 s de travada na
+    // primeira vez que o jogador chegava perto da fonte.
     this.light = new THREE.PointLight(0x6cff4d, 0, 7, 2);
-    this.light.position.y = 0.25;
-    this.group.add(this.light);
+    scene.add(this.light);
 
     this.group.visible = false;
   }
@@ -104,12 +108,14 @@ export class RadiationField {
 
   update(dt, playerPos) {
     this.group.position.copy(this.source.position); // segue a pastilha (gavetas)
-    if (this.fadeStart <= this.fadeFull) { this.group.visible = false; return; } // modo Difícil: sem campo
+    this.light.position.copy(this.source.position);
+    this.light.position.y += 0.25 * this.group.scale.y;
+    if (this.fadeStart <= this.fadeFull) { this.group.visible = false; this.light.intensity = 0; return; } // modo Difícil: sem campo
     const dist = playerPos.distanceTo(this.source.position);
     const p = THREE.MathUtils.clamp((this.fadeStart - dist) / (this.fadeStart - this.fadeFull), 0, 1);
 
     this.group.visible = p > 0.002;
-    if (!this.group.visible) return;
+    if (!this.group.visible) { this.light.intensity = 0; return; }
 
     this._t += dt;
     const pulse = 0.85 + 0.15 * Math.sin(this._t * 3.2);

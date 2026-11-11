@@ -16,15 +16,36 @@ export class RadiationSource {
     this._minD2 = SOURCE_MIN_DIST * SOURCE_MIN_DIST;
     this._sampler = new SurfaceSampler(lab.colliders);
 
-    // pastilha: cilindro cerâmico escuro com leve brilho (criada UMA vez;
-    // as fases seguintes reutilizam a mesma malha via respawn())
-    this.pellet = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.028, 0.028, 0.06, 14),
-      new THREE.MeshStandardMaterial({
-        color: 0x40463f, roughness: 0.35, metalness: 0.45,
-        emissive: 0x2c5a18, emissiveIntensity: 0.9,
-      })
-    );
+    // Pastilha: fonte selada — núcleo cerâmico escuro, com leve brilho, entre
+    // duas tampas de aço torneadas. Mesmo envelope de antes (Ø 56 mm × 60 mm):
+    // mira, alcance e encaixe nos recipientes não mudam. Criada UMA vez; as
+    // fases seguintes reutilizam a mesma malha via respawn().
+    const R = 0.028, HALF = 0.03;
+    const ceramic = new THREE.MeshStandardMaterial({
+      color: 0x40463f, roughness: 0.35, metalness: 0.45,
+      emissive: 0x2c5a18, emissiveIntensity: 0.9,
+    });
+    // metalness moderado: sem mapa de ambiente, metal puro refletiria só preto
+    const steel = new THREE.MeshStandardMaterial({ color: 0xc4ccd2, roughness: 0.3, metalness: 0.4 });
+    // perfil do núcleo: cintura levemente recuada com dois anéis em relevo
+    const core = [
+      [R * 0.9, -HALF * 0.56], [R * 0.9, -HALF * 0.3], [R * 0.97, -HALF * 0.26], [R * 0.97, -HALF * 0.16],
+      [R * 0.9, -HALF * 0.12], [R * 0.9, HALF * 0.12], [R * 0.97, HALF * 0.16], [R * 0.97, HALF * 0.26],
+      [R * 0.9, HALF * 0.3], [R * 0.9, HALF * 0.56],
+    ].map(([r, y]) => new THREE.Vector2(r, y));
+    this.pellet = new THREE.Mesh(new THREE.LatheGeometry(core, 20), ceramic);
+    // tampa: aba, corpo, chanfro e face com rebaixo central
+    const cap = [
+      [R * 0.9, HALF * 0.56], [R, HALF * 0.6], [R, HALF * 0.86], [R * 0.86, HALF],
+      [R * 0.42, HALF], [R * 0.36, HALF * 0.93], [0, HALF * 0.93],
+    ].map(([r, y]) => new THREE.Vector2(r, y));
+    const capGeo = new THREE.LatheGeometry(cap, 20);
+    for (const flip of [1, -1]) {
+      const end = new THREE.Mesh(capGeo, steel);
+      end.scale.y = flip;
+      end.castShadow = true;
+      this.pellet.add(end);
+    }
     this.pellet.rotation.z = Math.PI / 2; // deitada
     this.pellet.castShadow = true;
 

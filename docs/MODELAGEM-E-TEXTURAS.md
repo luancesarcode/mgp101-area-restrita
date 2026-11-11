@@ -48,3 +48,26 @@ Nenhum collider, blindagem ou recipiente novo: o que está na parede sai no máx
 ## Desempenho
 
 `LabBuilder._mergeStatic()` junta por material as malhas que nunca se movem. `_mergeLocal()` faz o mesmo dentro de cada grupo móvel (gavetas, portas, objetos soltos). Com todos os objetos novos, a cena faz menos chamadas de desenho do que fazia antes da mudança.
+
+## MGP-101, pastilha e partículas (novembro de 2026)
+
+A restrição "sem alterar o detector" valeu para a reforma do laboratório acima. Depois dela, os três modelos que o jogador mais olha foram refeitos, sem mudar arte do painel, LCD, colliders, alcance de interação nem balanceamento.
+
+### MGP-101 — `src/equipment/GeigerEquipment.js`
+
+Referência: fotos do aparelho real (frente e lateral).
+
+- Gabinete com a espessura real (5 cm; antes 3,2 cm) e arestas arredondadas. A silhueta frontal é a mesma.
+- Placa branca encaixada num rebaixo chanfrado do corpo azul. Antes era um plano flutuando 7,5 mm à frente do corpo.
+- Pintura azul texturizada (normal map procedural).
+- Linha de junção das duas metades do gabinete.
+- Chave liga/desliga tipo gangorra na lateral direita, com as marcas I/O e o furo abaixo dela.
+- A placa agora recebe luz (sombreado e brilho) e mantém um emissivo leve para a serigrafia continuar legível. No Blackout o emissivo cai junto com as luzes; o LCD continua retroiluminado.
+
+### Pastilha — `src/radiation/RadiationSource.js`
+
+Era um cilindro liso de 14 lados. Agora é uma fonte selada: núcleo cerâmico escuro com dois anéis em relevo entre tampas de aço torneadas, com chanfro e rebaixo central. Mesmo envelope (Ø 56 mm × 60 mm) e mesmo brilho verde.
+
+### Partículas de radiação — `src/effects/glowSprite.js`
+
+As partículas do campo da fonte e do clima das fases 8–12 eram quadrados chapados. Agora usam um ponto de luz macio (uma textura compartilhada).

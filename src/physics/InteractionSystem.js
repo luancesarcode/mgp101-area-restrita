@@ -194,6 +194,9 @@ export class InteractionSystem {
   }
 
   update(dt) {
+    // `moved` avisa o renderer que alguma malha mudou de lugar neste quadro
+    // (o mapa de sombras do sol só é refeito quando isso acontece).
+    this.moved = Boolean(this.heldLid);
     if (this._pendingOneShot && !this._fHoldActivated) {
       this._fHoldTime += dt;
       if (this._fHoldTime >= LID_HOLD_DELAY) {
@@ -210,6 +213,7 @@ export class InteractionSystem {
         c.progress += Math.sign(goal - c.progress) * Math.min(2.8 * dt, Math.abs(goal - c.progress));
         const ease = c.progress * c.progress * (3 - 2 * c.progress); // smoothstep
         c.apply(ease);
+        this.moved = true;
       }
     }
     // Scroll inclina em relação à câmera; M1/M2 giram continuamente em
@@ -232,7 +236,7 @@ export class InteractionSystem {
       for (let i = 0; i < this._lids.length; i++) {
         const l = this._lids[i];
         if (l === this.heldLid) this.updateHeldObject(l, PHYS_SUBSTEP);
-        else if (!l.resting) this.simulatePhysicsObject(l, PHYS_SUBSTEP);
+        else if (!l.resting) { this.simulatePhysicsObject(l, PHYS_SUBSTEP); this.moved = true; }
       }
       // depois de mover todos, os corpos trocam impulsos entre si
       this._resolveBodyPairs();

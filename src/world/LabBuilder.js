@@ -56,7 +56,10 @@ export class LabBuilder {
       labWhite: new THREE.MeshStandardMaterial(pbr(powderT, 0.25, { color: 0xedf0f3, roughness: 0.55, metalness: 0.08 })),
       labBlue: new THREE.MeshStandardMaterial(pbr(powderT, 0.25, { color: 0x2b78a6, roughness: 0.55, metalness: 0.12 })),
       rubber: new THREE.MeshStandardMaterial(pbr(rubT, 0.8, { color: 0x1b1f24, roughness: 1 })),
-      glass: new THREE.MeshPhysicalMaterial({ color: 0xc9eff7, roughness: 0.12, transmission: 0.45, transparent: true, opacity: 0.62, thickness: 0.025 }),
+      // Vidro por transparência simples. `transmission` (MeshPhysicalMaterial)
+      // obrigava o Three.js a desenhar a cena opaca inteira uma segunda vez
+      // sempre que um frasco aparecia: ~40% do tempo de quadro em GPU integrada.
+      glass: new THREE.MeshStandardMaterial({ color: 0xc9eff7, roughness: 0.08, metalness: 0.15, transparent: true, opacity: 0.36 }),
       liquidBlue: new THREE.MeshStandardMaterial({ color: 0x31a8c8, roughness: 0.24, transparent: true, opacity: 0.78 }),
       liquidAmber: new THREE.MeshStandardMaterial({ color: 0xc47a20, roughness: 0.3, transparent: true, opacity: 0.8 }),
       warning: new THREE.MeshStandardMaterial(pbr(powderT, 0.3, { color: 0xe6bd35, roughness: 0.7 })),

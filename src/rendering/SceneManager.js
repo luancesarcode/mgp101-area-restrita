@@ -4,6 +4,8 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
+export const MAX_QUALITY_LEVEL = 4;
+
 // ==== SCENEMANAGER ==========================================================
 // Cena principal, câmera, luzes, renderer + pós-processamento (bloom).
 // Mantém também a cena separada do viewmodel, renderizada por cima.
@@ -34,7 +36,9 @@ export class SceneManager {
     this.composer.addPass(this.bloom);
     this.composer.addPass(new OutputPass());
 
-    // Qualidade adaptativa (ver Game._adaptQuality): 0 alta · 1 média · 2 baixa
+    // Qualidade adaptativa (ver Game._adaptQuality): 0 alta · 1 média · 2 baixa.
+    // Os níveis 3 e 4 só existem no modo automático: reduzem a resolução
+    // interna (o gargalo em GPU integrada é o preenchimento de pixels).
     this.quality = 0;
     this.useComposer = true;
 
@@ -43,16 +47,17 @@ export class SceneManager {
   }
 
   setQuality(level) {
-    level = Math.max(0, Math.min(2, level));
+    level = Math.max(0, Math.min(MAX_QUALITY_LEVEL, level));
     if (level === this.quality) return;
     this.quality = level;
-    const ratio = [Math.min(devicePixelRatio, 1.5), Math.min(devicePixelRatio, 1.25), 1][level];
+    const native = Math.min(devicePixelRatio, 1);
+    const ratio = [Math.min(devicePixelRatio, 1.5), Math.min(devicePixelRatio, 1.25), native, native * 0.8, native * 0.65][level];
     this.renderer.setPixelRatio(ratio);
     this.composer.setPixelRatio(ratio);
     this.renderer.setSize(innerWidth, innerHeight);
     this.composer.setSize(innerWidth, innerHeight);
-    this.bloom.strength = [0.38, 0.26, 0][level];
-    this.useComposer = level < 2; // nível 2: render direto, sem pós-processamento
+    this.bloom.strength = [0.38, 0.26, 0, 0, 0][level];
+    this.useComposer = level < 2; // nível 2+: render direto, sem pós-processamento
   }
 
   _buildLights() {
@@ -70,6 +75,11 @@ export class SceneManager {
     sun.shadow.camera.far = 40;
     sun.shadow.bias = -0.0004;
     sun.shadow.normalBias = 0.025; // remove o serrilhado (acne) em arestas finas
+    // O sol não se move e quase todo o laboratório é estático: o mapa de
+    // sombras só é redesenhado quando algo mudou (ver requestShadowUpdate).
+    sun.shadow.autoUpdate = false;
+    sun.shadow.needsUpdate = true;
+    this._shadowAge = 0;
     this.scene.add(sun);
 
     this.vmHemi = new THREE.HemisphereLight(0xffffff, 0x556070, 1.5);
@@ -89,7 +99,21 @@ export class SceneManager {
     this.composer.setSize(innerWidth, innerHeight);
   }
 
-  render() {
+  // Pede um novo mapa de sombras do sol no próximo quadro. Chamado quando
+  // portas, gavetas, tampas ou objetos soltos se movem e na troca de fase.
+  requestShadowUpdate() {
+    this._shadowDirty = true;
+  }
+
+  render(dt = 0) {
+    // Rede de segurança: mesmo sem pedido, as sombras são refeitas a cada 2 s.
+    this._shadowAge += dt;
+    if (this._shadowDirty || this._shadowAge >= 2) {
+      this._shadowDirty = false;
+      this._shadowAge = 0;
+      // com o sol apagado (Blackout) não há sombra dele para redesenhar
+      if (this.sun.intensity > 0) this.sun.shadow.needsUpdate = true;
+    }
     if (this.useComposer) {
       this.composer.render();
     } else {

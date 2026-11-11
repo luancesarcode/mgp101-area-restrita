@@ -80,6 +80,19 @@ export class Game {
     this._bindUI();
     this.gamepad = new XboxGamepadController(this);
     this._bindKeys();
+    this._prewarm();
+  }
+
+  // Desenha um quadro, atrás da tela de abertura, com o campo de radiação à
+  // vista: os shaders do que nasce oculto são compilados agora, e não no
+  // meio da busca, quando o jogador chega perto da fonte.
+  _prewarm() {
+    const cam = this.sceneManager.camera;
+    this.field.group.visible = true;
+    cam.position.copy(this.source.position).add(new THREE.Vector3(0, 0.6, 2.2));
+    cam.lookAt(this.source.position);
+    this.sceneManager.render();
+    this.field.group.visible = false;
   }
 
   _makePhaseDifficulty(base, phase) {
@@ -199,6 +212,7 @@ export class Game {
     this.player._syncCamera();
     this._levelCamera();
 
+    this.sceneManager.requestShadowUpdate();
     this.elapsed = 0;
     this._hudTimer = 0;
     this.ended = false;
@@ -401,6 +415,7 @@ export class Game {
   _interactionDown() {
     if (!this.playing || this.ended || this.paused) return;
     const result = this.interact.keyDownF();
+    this.sceneManager.requestShadowUpdate(); // pastilha/chave recolhida, tampa solta
     if (result === 'collected') this.mission.collect();
     if (result === 'evacuation-key' && this.evacuation.collectKey()) {
       this.mission.collectEvacuationKey();
@@ -489,12 +504,13 @@ export class Game {
       `Saúde: ${this.health.health.toFixed(1)} (dano ${this.health.damageRate.toFixed(2)} HP/s)`;
   }
 
-  // FPS abaixo de 45 por ~2 s seguidos: desce um degrau de qualidade
-  // (menos pixel ratio → bloom mais fraco → sem pós-processamento).
+  // FPS abaixo de 50 por ~2 s seguidos: desce um degrau de qualidade
+  // (menos pixel ratio → bloom mais fraco → sem pós-processamento →
+  // resolução interna reduzida). Pausa e menus não contam.
   _adaptQuality(fps) {
     if (this.settings.state.graphicsQuality !== 'auto') { this._lowFpsStreak = 0; return; }
-    if (!this.playing || this.ended) { this._lowFpsStreak = 0; return; }
-    if (fps < 45) {
+    if (!this.playing || this.ended || this.paused) { this._lowFpsStreak = 0; return; }
+    if (fps < 50) {
       if (++this._lowFpsStreak >= 4) {
         this._lowFpsStreak = 0;
         this.sceneManager.setQuality(this.sceneManager.quality + 1);
@@ -632,6 +648,7 @@ export class Game {
       if (!this.difficulty.evacuation) this.field.update(dt, cam.position);
       this.atmosphere.update(dt);
       this.interact.update(dt);
+      if (this.interact.moved) this.sceneManager.requestShadowUpdate();
       if (!this.difficulty.evacuation) this.recorder.update(dt, this.player.position, this.detector.trueDose);
       this.mission.update(cam.position, this.detector.accumulated, this.detector.trueDose);
       if (this.difficulty.evacuation) {
@@ -677,6 +694,6 @@ export class Game {
     }
     this.blackout.update(dt, cam);
     this._updateDebug(dt);
-    this.sceneManager.render();
+    this.sceneManager.render(dt);
   }
 }

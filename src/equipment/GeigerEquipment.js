@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { EQUIPMENT_MAX_DOSE } from '../config/gameConfig.js';
 import { MGP_PANEL_SVG_DATA } from './panelSvgData.js';
+import { mulberry32, normalFromHeight } from '../world/LabTextures.js';
 
 // ==== DETECTORVIEWMODEL =====================================================
 // ==== GEIGERDISPLAY =========================================================
@@ -226,7 +227,7 @@ export class GeigerDisplay {
   }
 }
 
-// O MGP-101 em 1ª pessoa (corpo extrudado + face em CanvasTexture + sway).
+// O MGP-101 em 1ª pessoa (gabinete modelado + face em CanvasTexture + sway).
 export class DetectorViewmodel {
   constructor(vmScene, vmCamera, detector, audio = null) {
     this.detector = detector;
@@ -288,7 +289,9 @@ export class DetectorViewmodel {
   ];
 
   _buildMesh() {
-    const W = 0.15, H = 0.215, DEPTH = 0.032;
+    // Proporções do aparelho real: corpo espesso (~1/3 da largura), arestas
+    // arredondadas e a placa branca encaixada num rebaixo do corpo azul.
+    const W = 0.15, H = 0.215, DEPTH = 0.05, EDGE = 0.003;
     const svg = DetectorViewmodel.SVG;
 
     const toXY = ([px, py]) => new THREE.Vector2(
@@ -315,29 +318,63 @@ export class DetectorViewmodel {
     shape.bezierCurveTo(lC1.x, lC1.y, lC2.x, lC2.y, pts[22].x, pts[22].y);
     for (let i = 23; i < pts.length; i++) shape.lineTo(pts[i].x, pts[i].y);
     shape.closePath();
-    // Sem bevel: contorno do corpo = contorno da face. curveSegments alto = laterais
-    // curvas finamente subdivididas (acabamento moldado industrial).
-    const bodyGeo = new THREE.ExtrudeGeometry(shape, {
-      depth: DEPTH, bevelEnabled: false, curveSegments: 48,
+
+    // Rebaixo da placa frontal: mesmo traçado de _traceDeviceOutline().
+    const plate = this._plateOutline(toXY);
+    const shell = shape.clone();
+    shell.holes.push(new THREE.Path(plate.getPoints(16)));
+
+    // Tinta azul texturizada (pintura martelada do gabinete).
+    const paint = this._paintNormalMap();
+    const bodyMat = new THREE.MeshStandardMaterial({
+      color: 0x1f3577, roughness: 0.55, metalness: 0.1,
+      normalMap: paint, normalScale: new THREE.Vector2(0.3, 0.3),
     });
-    bodyGeo.translate(0, 0, -DEPTH);
-    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1f3577, roughness: 0.55, metalness: 0.1 });
+    // Casca com arestas arredondadas. bevelOffset negativo mantém a silhueta
+    // idêntica ao contorno da face; no furo, o mesmo chanfro forma a borda do
+    // rebaixo onde a placa branca encaixa.
+    const bodyGeo = new THREE.ExtrudeGeometry(shell, {
+      depth: DEPTH - 2 * EDGE, curveSegments: 32,
+      bevelEnabled: true, bevelThickness: EDGE, bevelSize: EDGE, bevelOffset: -EDGE, bevelSegments: 3,
+    });
+    bodyGeo.translate(0, 0, -(DEPTH - EDGE));
     this.group.add(new THREE.Mesh(bodyGeo, bodyMat));
+    // Miolo que fecha o rebaixo por trás da placa e a tampa traseira.
+    const coreGeo = new THREE.ExtrudeGeometry(plate, { depth: DEPTH - EDGE - 0.0012, bevelEnabled: false, curveSegments: 16 });
+    coreGeo.translate(0, 0, -DEPTH + 0.0006);
+    this.group.add(new THREE.Mesh(coreGeo, bodyMat));
+
+    // Linha de junção das duas metades do gabinete, a meia espessura.
+    const seamGeo = new THREE.ExtrudeGeometry(shape, {
+      depth: 0.0009, curveSegments: 32,
+      bevelEnabled: true, bevelThickness: 0, bevelSize: 0, bevelOffset: 0.00045, bevelSegments: 1,
+    });
+    seamGeo.translate(0, 0, -DEPTH / 2);
+    this.group.add(new THREE.Mesh(seamGeo, new THREE.MeshStandardMaterial({ color: 0x15275c, roughness: 0.7 })));
+
+    this._buildPowerSwitch(toXY, DEPTH);
 
     // O painel é desenhado no canvas com os SVGs embutidos em MGP_PANEL_SVG_DATA.
     // O visor usa uma textura própria, atualizada em tempo real durante o jogo.
     const panelW = W * svg.width / (svg.right - svg.left);
     const panelH = H * svg.height / (svg.bottom - svg.top);
+    const plateZ = -EDGE + 0.0003; // fundo do rebaixo
     this.faceCanvas = document.createElement('canvas');
     // A face mantém a mesma proporção, mas usa 1/4 dos pixels da versão
     // anterior — suficiente para o viewmodel e muito mais leve na GPU.
     this.faceCanvas.width = 512; this.faceCanvas.height = 768;
     this.faceTexture = new THREE.CanvasTexture(this.faceCanvas);
     this.faceTexture.colorSpace = THREE.SRGBColorSpace;
-    this.faceTexture.anisotropy = 2;
-    const faceMat = new THREE.MeshBasicMaterial({ map: this.faceTexture, transparent: true, depthWrite: false });
+    this.faceTexture.anisotropy = 4;
+    // A placa recebe luz (sombreado e brilho da membrana) e tem um leve
+    // emissivo próprio para a serigrafia continuar legível em qualquer pose.
+    const faceMat = new THREE.MeshStandardMaterial({
+      map: this.faceTexture, transparent: true, depthWrite: false,
+      roughness: 0.42, metalness: 0,
+      emissive: 0xffffff, emissiveMap: this.faceTexture, emissiveIntensity: 0.34,
+    });
     const face = new THREE.Mesh(new THREE.PlaneGeometry(panelW, panelH), faceMat);
-    face.position.z = 0.0075;
+    face.position.z = plateZ;
     face.renderOrder = 3;
     this.group.add(face);
 
@@ -354,10 +391,87 @@ export class DetectorViewmodel {
     lcd.position.set(
       ((svgLcd.x + svgLcd.w / 2) - svg.width / 2) / svg.width * panelW,
       (svg.height / 2 - (svgLcd.y + svgLcd.h / 2)) / svg.height * panelH,
-      0.0085
+      plateZ + 0.0004
     );
     lcd.renderOrder = 4;
     this.group.add(lcd);
+  }
+
+  // Contorno da placa branca em coordenadas do corpo (ver _traceDeviceOutline).
+  _plateOutline(toXY) {
+    const p = (x, y) => toXY([x, y]);
+    const s = new THREE.Shape();
+    const start = p(300, 253);
+    s.moveTo(start.x, start.y);
+    for (const [x, y] of [[724, 253], [835, 293], [835, 547]]) { const v = p(x, y); s.lineTo(v.x, v.y); }
+    let a = p(788, 631), b = p(760, 759), c = p(760, 891);
+    s.bezierCurveTo(a.x, a.y, b.x, b.y, c.x, c.y);
+    a = p(760, 995); b = p(791, 1105);
+    s.quadraticCurveTo(a.x, a.y, b.x, b.y);
+    for (const [x, y] of [[791, 1262], [750, 1308], [274, 1308], [233, 1262], [233, 1105]]) { const v = p(x, y); s.lineTo(v.x, v.y); }
+    a = p(264, 995); b = p(264, 891);
+    s.quadraticCurveTo(a.x, a.y, b.x, b.y);
+    a = p(264, 759); b = p(236, 631); c = p(189, 547);
+    s.bezierCurveTo(a.x, a.y, b.x, b.y, c.x, c.y);
+    const end = p(189, 293);
+    s.lineTo(end.x, end.y);
+    s.closePath();
+    return s;
+  }
+
+  // Relevo fino e irregular da pintura do gabinete (normal map tileável).
+  _paintNormalMap() {
+    const size = 128;
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const g = c.getContext('2d');
+    g.fillStyle = '#808080';
+    g.fillRect(0, 0, size, size);
+    const rand = mulberry32(4101);
+    for (let i = 0; i < 520; i++) {
+      const x = rand() * size, y = rand() * size, r = 1.2 + rand() * 2.6;
+      const v = rand() < 0.5 ? 255 : 0;
+      // desenhado também nas bordas opostas: a textura repete sem emenda
+      for (const ox of [-size, 0, size]) for (const oy of [-size, 0, size]) {
+        const grad = g.createRadialGradient(x + ox, y + oy, 0, x + ox, y + oy, r);
+        grad.addColorStop(0, `rgba(${v}, ${v}, ${v}, 0.5)`);
+        grad.addColorStop(1, `rgba(${v}, ${v}, ${v}, 0)`);
+        g.fillStyle = grad;
+        g.fillRect(x + ox - r, y + oy - r, r * 2, r * 2);
+      }
+    }
+    const tex = new THREE.CanvasTexture(normalFromHeight(c, 2.2));
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(26, 26); // os UVs da extrusão estão em metros
+    tex.anisotropy = 4;
+    return tex;
+  }
+
+  // Chave liga/desliga tipo gangorra na lateral direita, com o furo logo
+  // abaixo — como no aparelho real.
+  _buildPowerSwitch(toXY, depth) {
+    const sw = new THREE.Group();
+    const top = toXY([892, 400]), bottom = toXY([892, 470]);
+    sw.position.set(top.x, (top.y + bottom.y) / 2, -depth / 2);
+    const black = new THREE.MeshStandardMaterial({ color: 0x16181b, roughness: 0.45, metalness: 0.1 });
+    const gloss = new THREE.MeshStandardMaterial({ color: 0x23262b, roughness: 0.22, metalness: 0.15 });
+    const mark = new THREE.MeshBasicMaterial({ color: 0xe8ecef });
+    const bezel = new THREE.Mesh(new THREE.BoxGeometry(0.0034, 0.022, 0.0145), black);
+    bezel.position.x = 0.0012;
+    const rocker = new THREE.Mesh(new THREE.BoxGeometry(0.0036, 0.0176, 0.0105), gloss);
+    rocker.position.x = 0.0026;
+    rocker.rotation.z = -0.16; // ligado: metade de cima pressionada
+    const on = new THREE.Mesh(new THREE.BoxGeometry(0.0003, 0.0036, 0.0009), mark);
+    on.position.set(0.0019, 0.0042, 0);
+    const off = new THREE.Mesh(new THREE.TorusGeometry(0.0015, 0.00035, 6, 14), mark);
+    off.rotation.y = Math.PI / 2;
+    off.position.set(0.0019, -0.0044, 0);
+    rocker.add(on, off);
+    const hole = new THREE.Mesh(new THREE.CylinderGeometry(0.0011, 0.0011, 0.0006, 10), black);
+    hole.rotation.z = Math.PI / 2;
+    hole.position.set(0.0001, -0.02, 0);
+    sw.add(bezel, rocker, hole);
+    this.group.add(sw);
   }
 
   // Arte estática do painel (moldura, bezel do visor e símbolos vetoriais).

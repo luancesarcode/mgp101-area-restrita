@@ -5,7 +5,7 @@ import * as THREE from 'three';
 // luz ambiente se apagam; só sobram a luz de emergência sobre a porta, as
 // telas, os LEDs e a lanterna de capacete do jogador (L / RB liga e desliga).
 // O MGP-101 é desenhado em cena própria, com luzes próprias: no apagão elas
-// também baixam e o painel (material sem iluminação) é escurecido por tinta.
+// também baixam e o painel perde o emissivo que o mantém claro.
 // O LCD fica intocado — retroiluminado, continua legível no escuro.
 //
 // A troca de visibilidade das luzes só acontece no início da fase (recompila
@@ -31,7 +31,7 @@ export class Blackout {
       ceilEmissive: mats.ceiling.emissive.clone(),
       vmHemi: sceneManager.vmHemi.intensity,
       vmKey: sceneManager.vmKey.intensity,
-      face: this.faceMat ? this.faceMat.color.clone() : null,
+      face: this.faceMat ? this.faceMat.emissiveIntensity : 0,
     };
 
     this.flashlightIntensity = 26;
@@ -78,12 +78,13 @@ export class Blackout {
     if (!this.active) {
       sm.vmHemi.intensity = b.vmHemi;
       sm.vmKey.intensity = b.vmKey;
-      if (this.faceMat) this.faceMat.color.copy(b.face);
+      if (this.faceMat) this.faceMat.emissiveIntensity = b.face;
       return;
     }
     sm.vmHemi.intensity = this.flashlightOn ? 0.22 : 0.06;
     sm.vmKey.intensity = this.flashlightOn ? 0.3 : 0.05;
-    if (this.faceMat) this.faceMat.color.setHex(this.flashlightOn ? 0x5c626b : 0x1e2227);
+    // a placa recebe luz: no escuro sobra só um resto do emissivo que a mantém clara
+    if (this.faceMat) this.faceMat.emissiveIntensity = this.flashlightOn ? 0.07 : 0.01;
   }
 
   // Devolve true quando a lanterna mudou de estado (só existe no Blackout).

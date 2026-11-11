@@ -59,3 +59,5 @@ main.js
 - qualidade adaptativa.
 
 Depois da modularização, os materiais e a geometria do laboratório foram refeitos (texturas procedurais e objetos novos), sem tocar no MGP-101, na interface nem na física. Detalhes em [MODELAGEM-E-TEXTURAS.md](MODELAGEM-E-TEXTURAS.md).
+
+Em novembro de 2026 o MGP-101, a pastilha e as partículas foram remodelados e a renderização foi otimizada (a qualidade adaptativa ganhou dois níveis). Medições e método em [DESEMPENHO.md](DESEMPENHO.md).

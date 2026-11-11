@@ -8,7 +8,7 @@ import * as THREE from 'three';
 
 const SIZE = 512;
 
-function mulberry32(seed) {
+export function mulberry32(seed) {
   return () => {
     seed = (seed + 0x6D2B79F5) | 0;
     let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
@@ -28,13 +28,17 @@ function makeCanvas(w = SIZE, h = w) {
 function valueNoise(rand, cx, cy = cx) {
   const grid = new Float32Array(cx * cy);
   for (let i = 0; i < grid.length; i++) grid[i] = rand();
-  const at = (x, y) => grid[((y % cy + cy) % cy) * cx + ((x % cx + cx) % cx)];
   return (u, v) => {
     const x = u * cx, y = v * cy;
     const x0 = Math.floor(x), y0 = Math.floor(y);
     const fx = x - x0, fy = y - y0;
     const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
-    const a = at(x0, y0), b = at(x0 + 1, y0), c = at(x0, y0 + 1), d = at(x0 + 1, y0 + 1);
+    // a volta nas bordas é resolvida uma vez por amostra, não uma por canto
+    let xa = x0 % cx; if (xa < 0) xa += cx;
+    let ya = y0 % cy; if (ya < 0) ya += cy;
+    const xb = xa + 1 === cx ? 0 : xa + 1;
+    const rowA = ya * cx, rowB = (ya + 1 === cy ? 0 : ya + 1) * cx;
+    const a = grid[rowA + xa], b = grid[rowA + xb], c = grid[rowB + xa], d = grid[rowB + xb];
     return (a + (b - a) * sx) + ((c + (d - c) * sx) - (a + (b - a) * sx)) * sy;
   };
 }
@@ -67,20 +71,22 @@ function paint(ctx, fn) {
 
 // Converte um mapa de altura (canal R, branco = alto) em normal map tangente
 // no padrão OpenGL usado pelo Three.js. As bordas dão a volta (tileável).
-function normalFromHeight(heightCanvas, strength = 2) {
+export function normalFromHeight(heightCanvas, strength = 2) {
   const w = heightCanvas.width, h = heightCanvas.height;
   const src = heightCanvas.getContext('2d').getImageData(0, 0, w, h).data;
   const [c, ctx] = makeCanvas(w, h);
   const out = ctx.createImageData(w, h);
   const d = out.data;
-  const H = (x, y) => src[(((y + h) % h) * w + ((x + w) % w)) * 4] / 255;
+  const k = strength / 255;
   for (let y = 0; y < h; y++) {
+    const row = y * w, up = ((y + h - 1) % h) * w, down = ((y + 1) % h) * w;
     for (let x = 0; x < w; x++) {
-      const dx = (H(x + 1, y) - H(x - 1, y)) * strength;
+      const xl = (x + w - 1) % w, xr = (x + 1) % w;
+      const dx = (src[(row + xr) * 4] - src[(row + xl) * 4]) * k;
       // a textura é invertida em Y (flipY): +v no UV é "para cima" no canvas
-      const dy = (H(x, y + 1) - H(x, y - 1)) * strength;
-      const len = Math.hypot(dx, dy, 1);
-      const i = (y * w + x) * 4;
+      const dy = (src[(down + x) * 4] - src[(up + x) * 4]) * k;
+      const len = Math.sqrt(dx * dx + dy * dy + 1);
+      const i = (row + x) * 4;
       d[i] = (-dx / len * 0.5 + 0.5) * 255;
       d[i + 1] = (dy / len * 0.5 + 0.5) * 255;
       d[i + 2] = (1 / len * 0.5 + 0.5) * 255;
@@ -94,7 +100,7 @@ function normalFromHeight(heightCanvas, strength = 2) {
 function toTexture(canvas, srgb = false) {
   const tex = new THREE.CanvasTexture(canvas);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.anisotropy = 8;
+  tex.anisotropy = 4;
   if (srgb) tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }

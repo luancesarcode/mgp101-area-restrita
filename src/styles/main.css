@@ -243,6 +243,10 @@
   .boot-trefoil { filter: drop-shadow(0 0 10px rgba(125, 255, 94, 0.7)); animation: tref-pulse 2.6s ease-in-out infinite; }
   .boot-status { margin-top: 18px; color: #7dff5e; font-family: 'VT323', monospace; font-size: 25px; letter-spacing: 3px; }
   .boot-copy { margin: 13px auto 15px; max-width: 455px; color: #c3d6ca; font-size: 14px; line-height: 1.6; }
+  /* aviso exibido somente em aparelhos de toque sem mouse (celulares/tablets) */
+  .boot-touch-note { display: none; margin: 0 auto 15px; max-width: 455px; padding: 9px 12px; border: 1px solid rgba(255, 196, 77, 0.55); border-radius: 7px; background: rgba(255, 196, 77, 0.1); color: #ffd98a; font-size: 13.5px; line-height: 1.5; }
+  @media (hover: none) and (pointer: coarse) { .boot-touch-note { display: block; } }
+  .screen .cta:focus-visible { outline: 3px solid #7dff5e; outline-offset: 4px; }
   #boot-continue { min-width: 245px; font-family: 'Rajdhani', sans-serif; font-size: 17px; font-weight: 700; letter-spacing: 1.4px; }
 
   /* ---- Tela inicial: terminal RAD instruments ---- */
@@ -250,16 +254,9 @@
     background: linear-gradient(rgba(5, 8, 13, 0.42), rgba(5, 8, 13, 0.82));
   }
   #start-particles, #pause-particles, #campaign-particles { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
-  #start-particles span, #pause-particles span, #campaign-particles span {
-    position: absolute; bottom: -14px; border-radius: 50%;
-    background: #7dff5e; box-shadow: 0 0 10px #7dff5e, 0 0 24px rgba(125, 255, 94, 0.5);
-    animation: rise linear infinite;
-  }
-  /* brasas: sobem com deriva lateral, encolhem e morrem (maioria morre baixo) */
-  @keyframes rise {
-    0% { transform: translate(0, 0) scale(1); opacity: var(--p-op, 0.8); }
-    70% { opacity: calc(var(--p-op, 0.8) * 0.55); }
-    100% { transform: translate(var(--sway, 0px), var(--rise, -60vh)) scale(0.3); opacity: 0; }
+  /* brasas: desenhadas em um único canvas por EmberField.js */
+  #start-particles canvas, #pause-particles canvas, #campaign-particles canvas {
+    position: absolute; inset: 0; width: 100%; height: 100%;
   }
   /* clarão de "fogo" na base */
   #start-particles::after, #pause-particles::after, #campaign-particles::after {

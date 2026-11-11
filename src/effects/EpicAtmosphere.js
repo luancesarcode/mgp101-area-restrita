@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { glowSprite } from './glowSprite.js';
 import { EVAC_PHASE, MENU_MUSIC_FROM_PHASE } from '../config/gameConfig.js';
 
 // ==== EPICATMOSPHERE ========================================================
@@ -49,7 +50,7 @@ export class EpicAtmosphere {
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     this.mat = new THREE.PointsMaterial({
-      color: 0x9cff70, size: 0.05, transparent: true, opacity: 0,
+      color: 0x9cff70, size: 0.09, map: glowSprite(), transparent: true, opacity: 0,
       blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true,
     });
     this.points = new THREE.Points(geo, this.mat);
